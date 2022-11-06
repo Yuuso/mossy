@@ -1,0 +1,27 @@
+﻿<UserControl
+	x:Class="Mossy.StartView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:Mossy"
+    mc:Ignorable="d" 
+	d:DesignWidth="1600"
+    d:DesignHeight="900">
+
+	<StackPanel Orientation="Vertical" VerticalAlignment="Center">
+		<StackPanel.Resources>
+			<Style TargetType="Button">
+				<Setter Property="Width" Value="400"/>
+				<Setter Property="Height" Value="150"/>
+				<Setter Property="Margin" Value="10"/>
+				<Setter Property="Foreground" Value="White"/>
+				<Setter Property="Background" Value="#404040"/>
+				<Setter Property="FontSize" Value="40"/>
+			</Style>
+		</StackPanel.Resources>
+		
+		<Button Content="NEW" Command="{Binding NewDatabaseCommand}"/>
+		<Button Content="OPEN" Command="{Binding OpenDatabaseCommand}"/>
+	</StackPanel>
+</UserControl>
