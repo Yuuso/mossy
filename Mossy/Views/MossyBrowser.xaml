@@ -2,10 +2,10 @@
 	x:Class="Mossy.MossyBrowser"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Mossy"
-    mc:Ignorable="d" 
+    mc:Ignorable="d"
 	d:DesignWidth="1600"
     d:DesignHeight="900">
 
@@ -30,6 +30,7 @@
 			</Grid>
 		</Popup>
 		<DockPanel>
+
 			<Menu DockPanel.Dock="top">
 				<MenuItem Header="_File">
 					<MenuItem Header="_Add Project" Command="{Binding NewProjectPopupCommand}"/>
@@ -37,6 +38,7 @@
 					<MenuItem Header="_Close Database" Command="{Binding CloseDatabaseCommand}"/>
 				</MenuItem>
 			</Menu>
+
 			<Grid DockPanel.Dock="Top">
 				<Button
 					Content="ADD PROJECT"
@@ -46,15 +48,105 @@
 					Margin="5"
 					Command="{Binding NewProjectPopupCommand}"/>
 			</Grid>
-			<ItemsControl DockPanel.Dock="Left" ItemsSource="{Binding Database.Projects}" Background="Gray" Width="600">
-				<ItemsControl.ItemTemplate>
-					<DataTemplate>
-						<Border Background="DarkGoldenrod" Height="60">
-							<TextBlock Text="{Binding Name}" FontSize="30" Foreground="Black"/>
-						</Border>
-					</DataTemplate>
-				</ItemsControl.ItemTemplate>
-			</ItemsControl>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition MinWidth="200"/>
+					<ColumnDefinition MinWidth="200"/>
+				</Grid.ColumnDefinitions>
+
+				<ListBox
+					Grid.Column="0"
+					Background="Gray"
+					ItemsSource="{Binding Database.Projects}"
+					SelectedItem="{Binding SelectedProject}"
+					IsSynchronizedWithCurrentItem="True">
+
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<Border Background="DarkGoldenrod" Height="60" Margin="4">
+								<TextBlock Text="{Binding Name}" FontSize="28" Foreground="Black" Margin="4"/>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ListBox>
+
+				<GridSplitter
+					Background="OrangeRed"
+					Width="5"/>
+
+				<Border
+					Grid.Column="1"
+					x:Name="ProjectBorder"
+					Background="DimGray"
+					BorderThickness="2" CornerRadius="10" Margin="20"
+					DragOver="Project_DragOver" Drop="Project_Drop">
+
+					<Border.Style>
+						<Style TargetType="Border">
+							<Setter Property="BorderBrush" Value="White"/>
+							<Setter Property="AllowDrop" Value="True"/>
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding SelectedProject}" Value="{x:Null}">
+									<Setter Property="BorderBrush" Value="Transparent"/>
+									<Setter Property="AllowDrop" Value="False"/>
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</Border.Style>
+
+					<Border.Resources>
+						<Storyboard x:Key="BeginDragStoryboard">
+							<ColorAnimation
+								Duration="0:0:0"
+								Storyboard.TargetName="ProjectBorder"
+								Storyboard.TargetProperty="BorderBrush.Color"
+								To="LimeGreen"/>
+						</Storyboard>
+						<Storyboard x:Key="EndDragStoryboard">
+							<ColorAnimation
+								Duration="0:0:0"
+								Storyboard.TargetName="ProjectBorder"
+								Storyboard.TargetProperty="BorderBrush.Color"
+								To="White"/>
+						</Storyboard>
+					</Border.Resources>
+
+					<Border.Triggers>
+						<EventTrigger RoutedEvent="PreviewDragEnter">
+							<EventTrigger.Actions>
+								<BeginStoryboard Storyboard="{StaticResource BeginDragStoryboard}"/>
+							</EventTrigger.Actions>
+						</EventTrigger>
+						<EventTrigger RoutedEvent="PreviewDrop">
+							<EventTrigger.Actions>
+								<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
+							</EventTrigger.Actions>
+						</EventTrigger>
+						<EventTrigger RoutedEvent="PreviewDragLeave">
+							<EventTrigger.Actions>
+								<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
+							</EventTrigger.Actions>
+						</EventTrigger>
+					</Border.Triggers>
+
+					<StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+						<TextBlock Text="{Binding SelectedProject.ProjectId}" FontSize="30" Foreground="White"/>
+						<TextBlock Text="{Binding SelectedProject.Name}" FontSize="30" Foreground="White"/>
+						<TextBlock Text="{Binding SelectedProject.DateCreated}" FontSize="30" Foreground="White"/>
+
+						<ItemsControl ItemsSource="{Binding SelectedProject.Documents}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Border BorderBrush="DarkViolet" Background="Black" BorderThickness="1" Margin="1">
+										<TextBlock Text="{Binding Path.RawPath}" FontSize="16" Foreground="BurlyWood"/>
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</StackPanel>
+				</Border>
+			</Grid>
 		</DockPanel>
 	</Grid>
 </UserControl>

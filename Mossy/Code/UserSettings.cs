@@ -2,14 +2,13 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using System.Windows.Markup;
 using System.Windows;
 
 namespace Mossy;
 
 internal struct UserSettingsData
 {
-	public UserSettingsData() {}
+	public UserSettingsData() { }
 	public bool AutoOpenLastDatabase { get; set; } = true;
 	public string LastDatabaseFolderPath { get; set; } = "";
 }

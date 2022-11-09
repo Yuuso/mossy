@@ -15,6 +15,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		NewProjectCommand = new DelegateCommand(NewProjectHandler);
 		NewProjectPopupCommand = new DelegateCommand(NewProjectPopupCommandHandler);
 	}
+
 	private void NewDatabaseHandler(object? param)
 	{
 		Database.InitNew();
@@ -27,6 +28,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	{
 		Database.Deinit();
 	}
+
 	private void NewProjectPopupCommandHandler(object? param)
 	{
 		NewProjectPopup = true;
@@ -42,18 +44,70 @@ internal class ViewModel : NotifyPropertyChangedBase
 			Debug.Assert(false, "Invalid NewProject parameter!");
 			return;
 		}
-		string projectName = (string)param;
-		if (projectName.Length == 0)
+		Database.AddProject((string)param);
+	}
+
+	private static DragDropEffects GetDragEffect()
+	{
+		if (Keyboard.IsKeyDown(Key.LeftAlt) ||
+			Keyboard.IsKeyDown(Key.RightAlt))
 		{
-			MessageBox.Show("Project name cannot be empty.", "Error!", MessageBoxButton.OK);
+			return DragDropEffects.Link;
+		}
+		return DragDropEffects.Copy;
+	}
+	public void DocumentDragOver(DragEventArgs e)
+	{
+		Debug.Assert(
+			e.AllowedEffects.HasFlag(DragDropEffects.Copy) &&
+			e.AllowedEffects.HasFlag(DragDropEffects.Link));
+		e.Effects = DragDropEffects.None;
+		if (SelectedProject != null)
+		{
+			if (e.Data.GetDataPresent(DataFormats.StringFormat))
+			{
+				e.Effects = DragDropEffects.Link;
+			}
+			else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+			{
+				e.Effects = GetDragEffect();
+			}
+		}
+		e.Handled = true;
+	}
+	public void DocumentDrop(DragEventArgs e)
+	{
+		if (!SelectedProject.HasValue)
+		{
 			return;
 		}
-		Database.AddProject(projectName);
+		if (e.Data.GetDataPresent(DataFormats.StringFormat))
+		{
+			string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
+			Database.AddDocumentString(SelectedProject.Value, dataString);
+			e.Handled = true;
+			OnPropertyChanged(nameof(SelectedProject));
+		}
+		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+		{
+			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			foreach (string path in paths)
+			{ Database.AddDocumentFile(GetDragEffect(), SelectedProject.Value, path); }
+			e.Handled = true;
+			OnPropertyChanged(nameof(SelectedProject));
+		}
 	}
 
 	public bool NewProjectPopup { get; set; } = false;
 
 	public IMossyDatabase Database { get; }
+
+	private MossyProject? selectedProject;
+	public MossyProject? SelectedProject
+	{
+		get { return selectedProject; }
+		set { selectedProject = value; OnPropertyChanged(nameof(SelectedProject)); }
+	}
 
 	public ICommand? NewDatabaseCommand { get; private set; }
 	public ICommand? OpenDatabaseCommand { get; private set; }
