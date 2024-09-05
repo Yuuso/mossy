@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Mossy;
 
@@ -11,6 +12,27 @@ public partial class MossyBrowser : UserControl
 		InitializeComponent();
 	}
 
+
+	private void Project_PreviewDragEnter(object _, DragEventArgs e)
+	{
+		var vm = DataContext as ViewModel;
+		vm?.PreviewDocumentDragDrops(e);
+	}
+	private void Project_PreviewDragLeave(object _, DragEventArgs e)
+	{
+		var vm = DataContext as ViewModel;
+		vm?.PreviewDocumentDragDrops(e);
+	}
+	private void Project_PreviewDragOver(object _, DragEventArgs e)
+	{
+		var vm = DataContext as ViewModel;
+		vm?.PreviewDocumentDragDrops(e);
+	}
+	private void Project_PreviewDrop(object _, DragEventArgs e)
+	{
+		var vm = DataContext as ViewModel;
+		vm?.PreviewDocumentDragDrops(e);
+	}
 	private void Project_DragOver(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
@@ -20,5 +42,28 @@ public partial class MossyBrowser : UserControl
 	{
 		var vm = DataContext as ViewModel;
 		vm?.DocumentDrop(e);
+	}
+	private void Document_MouseMove(object sender, MouseEventArgs e)
+	{
+		if (e.LeftButton == MouseButtonState.Pressed &&
+			sender is FrameworkElement border &&
+			border.DataContext is MossyDocument doc)
+		{
+			var vm = DataContext as ViewModel;
+			vm?.DocumentDoDragDrop(doc, this);
+		}
+	}
+
+	private void Document_MouseDown(object sender, MouseButtonEventArgs e)
+	{
+		if (e.ClickCount == 2 &&
+			e.LeftButton == MouseButtonState.Pressed &&
+			sender is FrameworkElement border &&
+			border.DataContext is MossyDocument doc)
+		{
+			var vm = DataContext as ViewModel;
+			vm?.DocumentDoubleClick(doc);
+			e.Handled = true;
+		}
 	}
 }

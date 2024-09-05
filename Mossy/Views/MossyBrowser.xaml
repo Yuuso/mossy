@@ -4,36 +4,22 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:Mossy"
+	x:Name="MossyBrowserRoot"
     mc:Ignorable="d"
 	d:DesignWidth="1600"
     d:DesignHeight="900">
 
-	<Grid>
-		<Popup IsOpen="{Binding NewProjectPopup}" StaysOpen="True" Placement="Center">
-			<Grid Width="500" Height="300" Background="DimGray">
-				<Grid.RowDefinitions>
-					<RowDefinition Height="*"/>
-					<RowDefinition Height="*"/>
-				</Grid.RowDefinitions>
-				<TextBox
-					Grid.Row="0"
-					Margin="40,50"
-					x:Name="PopupProjectName"/>
-				<Button
-					Grid.Row="1"
-					Margin="100,40"
-					FontSize="30"
-					Content="ADD"
-					Command="{Binding NewProjectCommand}"
-					CommandParameter="{Binding Path=Text, ElementName=PopupProjectName}"/>
-			</Grid>
-		</Popup>
-		<DockPanel>
+	<UserControl.Resources>
+		<local:RenameVisibilityConverter x:Key="renameVisibilityConverter"/>
+	</UserControl.Resources>
 
+	<Grid>
+		<DockPanel>
 			<Menu DockPanel.Dock="top">
 				<MenuItem Header="_File">
-					<MenuItem Header="_Add Project" Command="{Binding NewProjectPopupCommand}"/>
+					<MenuItem Header="_Add Project" Command="{Binding NewProjectCommand}"/>
 					<Separator/>
 					<MenuItem Header="_Close Database" Command="{Binding CloseDatabaseCommand}"/>
 				</MenuItem>
@@ -46,7 +32,7 @@
 					Height="40"
 					FontSize="22"
 					Margin="5"
-					Command="{Binding NewProjectPopupCommand}"/>
+					Command="{Binding NewProjectCommand}"/>
 			</Grid>
 
 			<Grid>
@@ -55,32 +41,65 @@
 					<ColumnDefinition MinWidth="200"/>
 				</Grid.ColumnDefinitions>
 
-				<ListBox
+				<Border
 					Grid.Column="0"
-					Background="Gray"
-					ItemsSource="{Binding Database.Projects}"
-					SelectedItem="{Binding SelectedProject}"
-					IsSynchronizedWithCurrentItem="True">
+					Margin="23, 20"
+					CornerRadius="10"
+					Background="Gray">
 
-					<ItemsControl.ItemTemplate>
-						<DataTemplate>
-							<Border Background="DarkGoldenrod" Height="60" Margin="4">
-								<TextBlock Text="{Binding Name}" FontSize="28" Foreground="Black" Margin="4"/>
-							</Border>
-						</DataTemplate>
-					</ItemsControl.ItemTemplate>
-				</ListBox>
+					<ListBox
+						Background="Transparent"
+						BorderBrush="Transparent"
+						ItemsSource="{Binding Database.Projects}"
+						SelectedItem="{Binding SelectedProject}"
+						IsSynchronizedWithCurrentItem="True">
+
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<Border Background="DarkGoldenrod" Height="60" Margin="4">
+									<TextBlock
+										Text="{Binding Name}"
+										FontSize="28"
+										Foreground="Black"
+										Margin="4"/>
+
+									<Border.ContextMenu>
+										<ContextMenu>
+											<MenuItem
+													Header="Rename"
+													Command="{Binding DataContext.RenameProjectCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+											<Separator/>
+											<MenuItem
+													Header="Delete"
+													Foreground="Red"
+													Command="{Binding DataContext.DeleteProjectCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+										</ContextMenu>
+									</Border.ContextMenu>
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ListBox>
+				</Border>
 
 				<GridSplitter
-					Background="OrangeRed"
-					Width="5"/>
+					Background="CadetBlue"
+					Width="3"/>
 
 				<Border
 					Grid.Column="1"
 					x:Name="ProjectBorder"
 					Background="DimGray"
-					BorderThickness="2" CornerRadius="10" Margin="20"
-					DragOver="Project_DragOver" Drop="Project_Drop">
+					BorderThickness="2"
+					CornerRadius="10"
+					Margin="20"
+					DragOver="Project_DragOver"
+					Drop="Project_Drop"
+					PreviewDragEnter="Project_PreviewDragEnter"
+					PreviewDragLeave="Project_PreviewDragLeave"
+					PreviewDragOver="Project_PreviewDragOver"
+					PreviewDrop="Project_PreviewDrop">
 
 					<Border.Style>
 						<Style TargetType="Border">
@@ -113,17 +132,17 @@
 					</Border.Resources>
 
 					<Border.Triggers>
-						<EventTrigger RoutedEvent="PreviewDragEnter">
+						<EventTrigger RoutedEvent="DragEnter">
 							<EventTrigger.Actions>
 								<BeginStoryboard Storyboard="{StaticResource BeginDragStoryboard}"/>
 							</EventTrigger.Actions>
 						</EventTrigger>
-						<EventTrigger RoutedEvent="PreviewDrop">
+						<EventTrigger RoutedEvent="Drop">
 							<EventTrigger.Actions>
 								<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
 							</EventTrigger.Actions>
 						</EventTrigger>
-						<EventTrigger RoutedEvent="PreviewDragLeave">
+						<EventTrigger RoutedEvent="DragLeave">
 							<EventTrigger.Actions>
 								<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
 							</EventTrigger.Actions>
@@ -138,8 +157,37 @@
 						<ItemsControl ItemsSource="{Binding SelectedProject.Documents}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
-									<Border BorderBrush="DarkViolet" Background="Black" BorderThickness="1" Margin="1">
-										<TextBlock Text="{Binding Path.RawPath}" FontSize="16" Foreground="BurlyWood"/>
+									<Border
+										MouseMove="Document_MouseMove"
+										MouseDown="Document_MouseDown"
+										BorderBrush="DarkViolet"
+										Background="Black"
+										BorderThickness="1"
+										Margin="1">
+
+										<TextBlock
+											Text="{Binding Path.RawPath}"
+											FontSize="16"
+											Foreground="BurlyWood"/>
+
+										<Border.ContextMenu>
+											<ContextMenu>
+												<!--doDoubleClick-->
+												<MenuItem
+													Header="Rename"
+													Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource renameVisibilityConverter}}"
+													Command="{Binding DataContext.RenameDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+												<MenuItem Header="Add To Queue" IsEnabled="False"/>
+												<MenuItem Header="Set As Cover" IsEnabled="False"/>
+												<Separator/>
+												<MenuItem
+													Header="Delete"
+													Foreground="Red"
+													Command="{Binding DataContext.DeleteDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+											</ContextMenu>
+										</Border.ContextMenu>
 									</Border>
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>

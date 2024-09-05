@@ -1,6 +1,5 @@
 ﻿using Ookii.Dialogs.Wpf;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -38,14 +37,14 @@ internal class MossyConfig
 
 		if (!Directory.Exists(dialog.SelectedPath))
 		{
-			MessageBox.Show("Directory doesn't exist!", "Error", MessageBoxButton.OK);
+			MessageBox.Show("Directory doesn't exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			return null;
 		}
 
 		string path = Path.Join(dialog.SelectedPath, configFilename);
 		if (File.Exists(path))
 		{
-			MessageBox.Show("Config already exists!", "Error", MessageBoxButton.OK);
+			MessageBox.Show("Config already exists!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			return null;
 		}
 
@@ -58,6 +57,7 @@ internal class MossyConfig
 		configPath = path;
 		if (!SaveData())
 		{
+			configPath = null;
 			return null;
 		}
 
@@ -102,13 +102,14 @@ internal class MossyConfig
 
 		if (!path.EndsWith(configFilename))
 		{
-			MessageBox.Show("Selected file is not a Mossy Config file!", "Error!", MessageBoxButton.OK);
+			MessageBox.Show("Selected file is not a Mossy Config file!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return null;
 		}
 
 		configPath = path;
 		if (!LoadData())
 		{
+			configPath = null;
 			return null;
 		}
 
@@ -120,6 +121,7 @@ internal class MossyConfig
 	public void Deinit()
 	{
 		Debug.Assert(initialized);
+		configPath = null;
 		initialized = false;
 	}
 
@@ -134,22 +136,22 @@ internal class MossyConfig
 		}
 		catch (PathTooLongException e)
 		{
-			MessageBox.Show(e.Message, "Path Too Long!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Path Too Long!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 		catch (IOException e)
 		{
-			MessageBox.Show(e.Message, "IO Exception!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "IO Exception!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 		catch (UnauthorizedAccessException e)
 		{
-			MessageBox.Show(e.Message, "Unauthorized Access!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Unauthorized Access!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 		catch (Exception e)
 		{
-			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 
@@ -166,7 +168,7 @@ internal class MossyConfig
 		}
 		catch (Exception e)
 		{
-			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 
@@ -176,12 +178,12 @@ internal class MossyConfig
 		}
 		catch (JsonException e)
 		{
-			MessageBox.Show(e.Message, "Failed to read config!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Failed to read config!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 		catch (Exception e)
 		{
-			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Unknown Error!", MessageBoxButton.OK, MessageBoxImage.Error);
 			return false;
 		}
 
