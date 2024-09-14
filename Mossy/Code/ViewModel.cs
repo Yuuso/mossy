@@ -17,24 +17,31 @@ internal class ViewModel : NotifyPropertyChangedBase
 		OpenDatabaseCommand = new DelegateCommand(OpenDatabaseHandler);
 		CloseDatabaseCommand = new DelegateCommand(CloseDatabaseHandler);
 		NewProjectCommand = new DelegateCommand(NewProjectHandler);
-		RenameDocumentCommand = new DelegateCommand(RenameDocumentHandler);
-		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
 		RenameProjectCommand = new DelegateCommand(RenameProjectHandler);
 		DeleteProjectCommand = new DelegateCommand(DeleteProjectHandler);
+		AddProjectAltNameCommand = new DelegateCommand(AddProjectAltNameHandler);
+		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
+		RenameDocumentCommand = new DelegateCommand(RenameDocumentHandler);
+		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
 	}
+
 
 	private void NewDatabaseHandler(object? param)
 	{
 		Database.InitNew();
 	}
+
 	private void OpenDatabaseHandler(object? param)
 	{
 		Database.InitOpen();
 	}
+
 	private void CloseDatabaseHandler(object? param)
 	{
 		Database.Deinit();
 	}
+
+
 	private void NewProjectHandler(object? param)
 	{
 		Debug.Assert(param == null);
@@ -45,6 +52,81 @@ internal class ViewModel : NotifyPropertyChangedBase
 			Database.AddProject(dialog.Result);
 		}
 	}
+
+	private void RenameProjectHandler(object? param)
+	{
+		if (param == null || param is not MossyProject)
+		{
+			Debug.Assert(false, "Invalid RenameProject parameter!");
+			return;
+		}
+		MossyProject project = (MossyProject)param;
+		var dialog = new TextInputDialog("Rename", project.Name);
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result == project.Name)
+			{
+				// Name didn't change
+				return;
+			}
+			Database.RenameProject(project, dialog.Result);
+		}
+	}
+
+	private void DeleteProjectHandler(object? param)
+	{
+		if (param == null || param is not MossyProject)
+		{
+			Debug.Assert(false, "Invalid DeleteProject parameter!");
+			return;
+		}
+		MossyProject project = (MossyProject)param;
+		var result = MessageBox.Show(
+			$"Delete project '{project.Name}'?" + Environment.NewLine + "This operation cannot be undone!",
+			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+		if (result == MessageBoxResult.Yes)
+		{
+			if (SelectedProject == project)
+			{
+				SelectedProject = null;
+			}
+			Database.DeleteProject(project);
+		}
+	}
+
+	private void AddProjectAltNameHandler(object? param)
+	{
+		Debug.Assert(param == null);
+		if (SelectedProject == null)
+		{
+			Debug.Assert(false, "No project selected!?");
+			return;
+		}
+		var dialog = new TextInputDialog("Add Alt Name");
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			Database.AddProjectAltName(SelectedProject, dialog.Result);
+		}
+	}
+
+	private void DeleteProjectAltNameHandler(object? param)
+	{
+		if (param == null || param is not string)
+		{
+			Debug.Assert(false, "Invalid DeleteProjectAltName parameter!");
+			return;
+		}
+		if (SelectedProject == null)
+		{
+			Debug.Assert(false, "No project selected!?");
+			return;
+		}
+		Database.DeleteProjectAltName(SelectedProject, (string)param);
+	}
+
+
 	private void RenameDocumentHandler(object? param)
 	{
 		if (param == null || param is not MossyDocument)
@@ -83,6 +165,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			}
 		}
 	}
+
 	private void DeleteDocumentHandler(object? param)
 	{
 		if (param == null || param is not MossyDocument)
@@ -100,46 +183,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			Database.DeleteDocument(document, SelectedProject);
 		}
 	}
-	private void RenameProjectHandler(object? param)
-	{
-		if (param == null || param is not MossyProject)
-		{
-			Debug.Assert(false, "Invalid RenameProject parameter!");
-			return;
-		}
-		MossyProject project = (MossyProject)param;
-		var dialog = new TextInputDialog("Rename", project.Name);
-		var result = dialog.ShowDialog();
-		if (result.HasValue && result.Value)
-		{
-			if (dialog.Result == project.Name)
-			{
-				// Name didn't change
-				return;
-			}
-			Database.RenameProject(project, dialog.Result);
-		}
-	}
-	private void DeleteProjectHandler(object? param)
-	{
-		if (param == null || param is not MossyProject)
-		{
-			Debug.Assert(false, "Invalid DeleteProject parameter!");
-			return;
-		}
-		MossyProject project = (MossyProject)param;
-		var result = MessageBox.Show(
-			$"Delete project '{project.Name}'?" + Environment.NewLine + "This operation cannot be undone!",
-			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-		if (result == MessageBoxResult.Yes)
-		{
-			if (SelectedProject == project)
-			{
-				SelectedProject = null;
-			}
-			Database.DeleteProject(project);
-		}
-	}
+
 
 	private static DragDropEffects GetDragEffect(DragDropEffects allowed)
 	{
@@ -157,6 +201,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 		return DragDropEffects.None;
 	}
+
 	public void PreviewDocumentDragDrops(DragEventArgs e)
 	{
 		// Disallow drag and drop of files in current project
@@ -182,6 +227,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			}
 		}
 	}
+
 	public void DocumentDragOver(DragEventArgs e)
 	{
 		if (SelectedProject == null)
@@ -202,6 +248,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			e.Effects = GetDragEffect(e.AllowedEffects);
 		}
 	}
+
 	public void DocumentDrop(DragEventArgs e)
 	{
 		if (SelectedProject == null)
@@ -234,6 +281,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			}
 		}
 	}
+
 	public void DocumentDoDragDrop(MossyDocument doc, DependencyObject source)
 	{
 		if (doc.Path.Type != MossyDocumentPathType.File)
@@ -245,6 +293,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		var dataObject = new DataObject(DataFormats.FileDrop, paths);
 		DragDrop.DoDragDrop(source, dataObject, DragDropEffects.Copy);
 	}
+
 	public void DocumentDoubleClick(MossyDocument doc)
 	{
 		switch (doc.Path.Type)
@@ -274,6 +323,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+
 	public IMossyDatabase Database { get; }
 
 	private MossyProject? selectedProject;
@@ -287,8 +337,10 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public ICommand? OpenDatabaseCommand { get; private set; }
 	public ICommand? CloseDatabaseCommand { get; private set; }
 	public ICommand? NewProjectCommand { get; private set; }
-	public ICommand? RenameDocumentCommand { get; private set; }
-	public ICommand? DeleteDocumentCommand { get; private set; }
 	public ICommand? RenameProjectCommand { get; private set; }
 	public ICommand? DeleteProjectCommand { get; private set; }
+	public ICommand? AddProjectAltNameCommand { get; private set; }
+	public ICommand? DeleteProjectAltNameCommand { get; private set; }
+	public ICommand? RenameDocumentCommand { get; private set; }
+	public ICommand? DeleteDocumentCommand { get; private set; }
 }

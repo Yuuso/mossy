@@ -12,6 +12,7 @@
     d:DesignHeight="900">
 
 	<UserControl.Resources>
+		<local:VisibilityConverter x:Key="visibilityConverter"/>
 		<local:RenameVisibilityConverter x:Key="renameVisibilityConverter"/>
 	</UserControl.Resources>
 
@@ -149,10 +150,33 @@
 						</EventTrigger>
 					</Border.Triggers>
 
-					<StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-						<TextBlock Text="{Binding SelectedProject.ProjectId}" FontSize="30" Foreground="White"/>
+					<StackPanel
+						Visibility="{Binding SelectedProject, Converter={StaticResource visibilityConverter}}"
+						Orientation="Vertical"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center">
+
+						<TextBlock Text="{Binding SelectedProject.ProjectId}" FontSize="20" Foreground="White"/>
+						<TextBlock Text="{Binding SelectedProject.DateCreated}" FontSize="20" Foreground="White"/>
 						<TextBlock Text="{Binding SelectedProject.Name}" FontSize="30" Foreground="White"/>
-						<TextBlock Text="{Binding SelectedProject.DateCreated}" FontSize="30" Foreground="White"/>
+						<ItemsControl ItemsSource="{Binding SelectedProject.AltNames}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal"/>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Button
+										Content="{Binding}"
+										Command="{Binding DataContext.DeleteProjectAltNameCommand, Source={x:Reference MossyBrowserRoot}}"
+										CommandParameter="{Binding}"/>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<Button
+							Content="Add Name"
+							Command="{Binding AddProjectAltNameCommand}"/>
 
 						<ItemsControl ItemsSource="{Binding SelectedProject.Documents}">
 							<ItemsControl.ItemTemplate>

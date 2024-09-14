@@ -28,6 +28,7 @@ internal sealed class UserSettings
 		var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 		return Path.Combine(appDataPath, "Mossy", "user_settings.json");
 	}
+
 	private void InitData()
 	{
 		var userSettingsPath = GetUserSettingsPath();
@@ -64,6 +65,7 @@ internal sealed class UserSettings
 			SaveData();
 		}
 	}
+
 	private void ClearData()
 	{
 		try
@@ -77,6 +79,7 @@ internal sealed class UserSettings
 		}
 		InitData();
 	}
+
 	private void SaveData()
 	{
 		string jsonString = JsonSerializer.Serialize(data);
@@ -89,6 +92,7 @@ internal sealed class UserSettings
 			MessageBox.Show(e.Message, "Failed to save user settings!", MessageBoxButton.OK);
 		}
 	}
+
 	private void LoadData()
 	{
 		string jsonString;
@@ -112,6 +116,7 @@ internal sealed class UserSettings
 			ClearData();
 		}
 	}
+
 
 	private UserSettingsData data = new();
 	public bool AutoOpenLastDatabase

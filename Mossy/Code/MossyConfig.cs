@@ -66,6 +66,7 @@ internal class MossyConfig
 
 		return dialog.SelectedPath;
 	}
+
 	public string? InitOpen(string? path)
 	{
 		Debug.Assert(!initialized);
@@ -118,6 +119,7 @@ internal class MossyConfig
 
 		return Path.GetDirectoryName(configPath);
 	}
+
 	public void Deinit()
 	{
 		Debug.Assert(initialized);
@@ -157,6 +159,7 @@ internal class MossyConfig
 
 		return true;
 	}
+
 	private bool LoadData()
 	{
 		Debug.Assert(configPath != null);

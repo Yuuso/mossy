@@ -4,7 +4,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Transactions;
 using System.Windows;
 using System.Windows.Documents;
@@ -52,10 +54,12 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 		Initialized = true;
 	}
+
 	public void InitOpen()
 	{
 		InitOpen(null);
 	}
+
 	private void InitOpen(string? param)
 	{
 		Debug.Assert(!Initialized);
@@ -82,6 +86,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 		Initialized = true;
 	}
+
 	public void Deinit()
 	{
 		Initialized = false;
@@ -91,6 +96,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		databasePath = null;
 	}
 
+
 	private void OnDatabaseLoaded()
 	{
 		var folder = Path.GetDirectoryName(databasePath);
@@ -99,6 +105,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			UserSettings.Instance.LastDatabaseFolderPath = folder;
 		}
 	}
+
 	private static bool ValidateProjectName(string projectName)
 	{
 		if (projectName.Length <= 0)
@@ -113,6 +120,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 		return true;
 	}
+
 
 	private bool NewDatabase()
 	{
@@ -185,6 +193,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		OnDatabaseLoaded();
 		return true;
 	}
+
 	private bool LoadDatabase()
 	{
 		Debug.Assert(databasePath != null);
@@ -313,9 +322,16 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			}
 		}
 
+		if (true)
+		{
+			// TODO: Validate
+		}
+
 		OnDatabaseLoaded();
 		return true;
 	}
+
+
 	public bool AddProject(string projectName)
 	{
 		if (!ValidateProjectName(projectName))
@@ -371,6 +387,258 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		Projects.Add(project);
 		return true;
 	}
+
+	public bool DeleteProject(MossyProject project)
+	{
+		if (project.Documents.Count != 0)
+		{
+			MessageBox.Show(
+				$"Project {project.Name} is not empty.",
+				"Failed to delete project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to delete project!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			DELETE FROM projects
+			WHERE project_id = $id;
+		";
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to delete project!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		if (true)
+		{
+			// Validate that there are no connected documents.
+			command.CommandText =
+			@"
+				SELECT COUNT(*)
+				FROM project_document
+				WHERE project_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+			try
+			{
+				var result = command.ExecuteScalar();
+				Debug.Assert(result != null);
+				Debug.Assert((long)result == 0);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to validate project document database!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+		var removed = Projects.Remove(project);
+		Debug.Assert(removed);
+
+		transaction.Commit();
+		return true;
+	}
+
+	public bool RenameProject(MossyProject project, string newName)
+	{
+		if (newName.Length == 0)
+		{
+			MessageBox.Show("Name cannot be empty.", "Failed to rename project!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET name = $name
+			WHERE project_id = $id;
+		";
+		command.Parameters.AddWithValue("$name", newName);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to rename project!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		project.Name = newName;
+
+		transaction.Commit();
+		return true;
+	}
+
+	public bool AddProjectAltName(MossyProject project, string altName)
+	{
+		if (!ValidateProjectName(altName))
+		{
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		string altNames = altName;
+		foreach (string name in project.AltNames)
+		{
+			altNames = altNames + altNamesSeparator + name;
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET alt_names = $names
+			WHERE project_id = $id;
+		";
+		command.Parameters.AddWithValue("$names", altNames);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to add a name!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		transaction.Commit();
+
+		project.AltNames.Add(altName);
+		return true;
+	}
+
+	public bool DeleteProjectAltName(MossyProject project, string altName)
+	{
+		Debug.Assert(project.AltNames.Contains(altName));
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		string altNames = "";
+		foreach (string name in project.AltNames)
+		{
+			if (name == altName)
+				continue;
+
+			if (altNames.Length > 0)
+			{
+				altNames += altNamesSeparator + name;
+			}
+			else
+			{
+				altNames = name;
+			}
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET alt_names = $names
+			WHERE project_id = $id;
+		";
+		command.Parameters.AddWithValue("$names", altNames);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to remove a name!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		transaction.Commit();
+
+		var removed = project.AltNames.Remove(altName);
+		Debug.Assert(removed);
+		return true;
+	}
+
+
 	private bool AddDocument(MossyDocumentPath documentPath, MossyProject project)
 	{
 		Debug.Assert(databasePath != null);
@@ -450,6 +718,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		project.Documents.Add(document);
 		return true;
 	}
+
 	public bool AddDocumentFile(DragDropEffects operation, MossyProject project, string path)
 	{
 		if (Directory.Exists(path))
@@ -566,6 +835,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 		return true;
 	}
+
 	public bool AddDocumentString(MossyProject project, string data)
 	{
 		if (Directory.Exists(data) || File.Exists(data))
@@ -582,6 +852,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 		return false;
 	}
+
 	public bool DeleteDocument(MossyDocument document, MossyProject project)
 	{
 		if (!project.Documents.Contains(document))
@@ -668,6 +939,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		transaction.Commit();
 		return true;
 	}
+
 	public bool RenameDocument(MossyDocument document, string newName)
 	{
 		if (document.Path.Type != MossyDocumentPathType.File)
@@ -753,59 +1025,8 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		transaction.Commit();
 		return true;
 	}
-	public bool DeleteProject(MossyProject project)
-	{
-		throw new NotImplementedException();
-	}
-	public bool RenameProject(MossyProject project, string newName)
-	{
-		if (newName.Length == 0)
-		{
-			MessageBox.Show("Name cannot be empty.", "Failed to rename project!", MessageBoxButton.OK);
-			return false;
-		}
 
-		Debug.Assert(databasePath != null);
-		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
-		try
-		{
-			connection.Open();
-		}
-		catch (SqliteException e)
-		{
-			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
-			return false;
-		}
 
-		using var transaction = connection.BeginTransaction();
-
-		using var command = connection.CreateCommand();
-		command.CommandText =
-		@"
-			UPDATE projects
-			SET name = $name
-			WHERE project_id = $id;
-		";
-		command.Parameters.AddWithValue("$name", newName);
-		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
-
-		try
-		{
-			var result = command.ExecuteNonQuery();
-			Debug.Assert(result == 1);
-		}
-		catch (SqliteException e)
-		{
-			MessageBox.Show(e.Message, "Failed to rename project!", MessageBoxButton.OK);
-			transaction.Rollback();
-			return false;
-		}
-
-		project.Name = newName;
-
-		transaction.Commit();
-		return true;
-	}
 
 	private string GetAbsolutePath(string path)
 	{
@@ -813,11 +1034,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		Debug.Assert(databaseDir != null);
 		return Path.Combine(databaseDir, path);
 	}
+
 	public string GetAbsolutePath(MossyDocument document)
 	{
 		Debug.Assert(document.Path.Type == MossyDocumentPathType.File);
 		return GetAbsolutePath(document.Path.Path);
 	}
+
 
 	#region IMossyDatabase Properties
 	private bool initialized = false;
