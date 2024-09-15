@@ -235,6 +235,11 @@ internal interface IMossyDatabase
 	public bool DeleteDocument(MossyDocument document, MossyProject project);
 	public bool RenameDocument(MossyDocument document, string newName);
 
+	public bool AddTag(string name, string category);
+	public bool DeleteTag(MossyTag tag);
+	public bool RenameTag(MossyTag tag, string newName);
+	public bool RecategorizeTag(MossyTag tag, string newCategory);
+
 	public string GetAbsolutePath(MossyDocument document);
 
 	public bool Initialized { get; }

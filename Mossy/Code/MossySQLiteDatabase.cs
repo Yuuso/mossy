@@ -10,6 +10,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Transactions;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Media;
 using System.Xml.Linq;
 
 namespace Mossy;
@@ -108,7 +109,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	private static bool ValidateProjectName(string projectName)
 	{
-		if (projectName.Length <= 0)
+		if (string.IsNullOrWhiteSpace(projectName))
 		{
 			MessageBox.Show("Project name cannot be empty", "Invalid project name!", MessageBoxButton.OK);
 			return false;
@@ -213,7 +214,6 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		@"
 			SELECT * FROM projects;
 		";
-
 		try
 		{
 			using var reader = command.ExecuteReader();
@@ -248,6 +248,44 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				project.Documents = new();
 
 				Projects.Add(project);
+			}
+		}
+		catch (Exception e)
+		{
+			MessageBox.Show(e.Message, "Failed to load database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		command.CommandText =
+		@"
+			SELECT * FROM tags;
+		";
+		try
+		{
+			using var reader = command.ExecuteReader();
+			while (reader.Read())
+			{
+				var tag = new MossyTag();
+
+				var idOrd = reader.GetOrdinal("tag_id");
+				Debug.Assert(!reader.IsDBNull(idOrd));
+				tag.TagId = reader.GetInt64(idOrd);
+
+				var nameOrd = reader.GetOrdinal("name");
+				Debug.Assert(!reader.IsDBNull(nameOrd));
+				tag.Name = reader.GetString(nameOrd);
+
+				var categoryOrd = reader.GetOrdinal("category");
+				Debug.Assert(!reader.IsDBNull(categoryOrd));
+				tag.Category = reader.GetString(categoryOrd);
+
+				var dateCreatedOrd = reader.GetOrdinal("date_created");
+				Debug.Assert(!reader.IsDBNull(dateCreatedOrd));
+				tag.DateCreated = reader.GetDateTimeOffset(dateCreatedOrd).DateTime;
+
+				tag.Documents = new();
+
+				Tags.Add(tag);
 			}
 		}
 		catch (Exception e)
@@ -1027,6 +1065,256 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 	}
 
 
+	public bool AddTag(string name, string category)
+	{
+		Debug.Assert(name != null && name.Length > 0);
+		Debug.Assert(category != null);
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		var tagDateCreated = DateTimeOffset.Now;
+		long tagId;
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			INSERT INTO tags (name, category, date_created)
+			VALUES ($name, $cat, $date);
+
+			SELECT last_insert_rowid();
+		";
+		command.Parameters.AddWithValue("$name", name);
+		command.Parameters.AddWithValue("$cat", category);
+		command.Parameters.AddWithValue("$date", tagDateCreated);
+		try
+		{
+			var result = command.ExecuteScalar();
+			Debug.Assert(result != null);
+			tagId = (long)result;
+			Debug.Assert(tagId > 0);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to add new tag!", MessageBoxButton.OK);
+			return false;
+		}
+
+		var tag = new MossyTag
+		{
+			TagId = tagId,
+			Name = name,
+			Category = category,
+			DateCreated = tagDateCreated.DateTime,
+			Color = new(),
+			Documents = new()
+		};
+		Tags.Add(tag);
+		return true;
+	}
+
+	public bool DeleteTag(MossyTag tag)
+	{
+		if (tag.Documents.Count != 0)
+		{
+			MessageBox.Show(
+				"Tag is not empty!",
+				"Failed to delete tag!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Tag (id={tag.TagId}) not found.",
+				"Failed to delete tag!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			DELETE FROM tags
+			WHERE tag_id = $id;
+		";
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to delete tag!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		command.CommandText =
+		@"
+			DELETE FROM project_tag
+			WHERE tag_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+		try
+		{
+			_ = command.ExecuteNonQuery();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to delete tag!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		if (true)
+		{
+			// Validate that there are no connected documents.
+			command.CommandText =
+			@"
+				SELECT COUNT(*)
+				FROM tag_document
+				WHERE tag_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", tag.TagId.Value);
+			try
+			{
+				var result = command.ExecuteScalar();
+				Debug.Assert(result != null);
+				Debug.Assert((long)result == 0);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to validate tag document database!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+		transaction.Commit();
+
+		foreach (var project in Projects)
+		{
+			if (project.Tags.Contains(tag))
+			{
+				project.Tags.Remove(tag);
+			}
+		}
+
+		var removed = Tags.Remove(tag);
+		Debug.Assert(removed);
+
+		return true;
+	}
+
+	public bool RenameTag(MossyTag tag, string newName)
+	{
+		Debug.Assert(tag.Name != newName);
+		Debug.Assert(newName != null && newName.Length > 0);
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE tags
+			SET name = $name
+			WHERE tag_id = $id;
+		";
+		command.Parameters.AddWithValue("$name", newName);
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to rename tag!", MessageBoxButton.OK);
+			return false;
+		}
+
+		tag.Name = newName;
+		return true;
+	}
+
+	public bool RecategorizeTag(MossyTag tag, string newCategory)
+	{
+		Debug.Assert(tag.Category != newCategory);
+		Debug.Assert(newCategory != null);
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE tags
+			SET category = $cat
+			WHERE tag_id = $id;
+		";
+		command.Parameters.AddWithValue("$cat", newCategory);
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to recategorize tag!", MessageBoxButton.OK);
+			return false;
+		}
+
+		tag.Category = newCategory;
+		return true;
+	}
+
 
 	private string GetAbsolutePath(string path)
 	{
@@ -1049,14 +1337,14 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		get { return initialized; }
 		private set { initialized = value; OnPropertyChanged(); }
 	}
-	public ObservableCollection<MossyTag> Tags { get; private set; } = new();
-	public ObservableCollection<MossyProject> Projects { get; private set; } = new();
+	public ObservableCollection<MossyTag> Tags			{ get; } = new();
+	public ObservableCollection<MossyProject> Projects	{ get; } = new();
 	#endregion
 
 	private MossyConfig config = new();
 	private string? databasePath;
-	private const string databaseFilename = "mossy_database.db";
-	private const string dataFolder = "data";
-	private const string projectFolderPrefix = "PRJ_";
-	private const string altNamesSeparator = ";";
+	private const string databaseFilename		= "mossy_database.db";
+	private const string dataFolder				= "data";
+	private const string projectFolderPrefix	= "PRJ_";
+	private const string altNamesSeparator		= ";";
 }

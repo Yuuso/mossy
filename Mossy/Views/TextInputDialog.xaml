@@ -28,14 +28,28 @@
 			Margin="20, 0"
 			Foreground="DarkGray"/>
 
-		<TextBox
+		<StackPanel
 			Grid.Column="1"
-			Grid.Row="1"
-			x:Name="InputTextBox"
-			MinWidth="250"
-			Text="INPUT"
-			VerticalAlignment="Center"
-			HorizontalAlignment="Left"/>
+			Grid.Row="1">
+
+			<Label
+				x:Name="Label1"
+				Content="LABEL"/>
+			<TextBox
+				x:Name="Input1"
+				MinWidth="250"
+				Margin="0,0,0,10"
+				Text="INPUT"/>
+
+			<Label
+				x:Name="Label2"
+				Content="LABEL"/>
+			<TextBox
+				x:Name="Input2"
+				MinWidth="250"
+				Text="INPUT"/>
+
+		</StackPanel>
 
 		<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Right" Margin="0,10,0,0">
 			<Button IsDefault="True" Click="OKButton_Click" MinWidth="60" Margin="0,0,10,0" Content="_Ok"/>

@@ -23,6 +23,10 @@ internal class ViewModel : NotifyPropertyChangedBase
 		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
 		RenameDocumentCommand = new DelegateCommand(RenameDocumentHandler);
 		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
+		AddTagCommand = new DelegateCommand(AddTagHandler);
+		DeleteTagCommand = new DelegateCommand(DeleteTagHandler);
+		RenameTagCommand = new DelegateCommand(RenameTagHandler);
+		RecategorizeTagCommand = new DelegateCommand(RecategorizeTagHandler);
 	}
 
 
@@ -45,11 +49,11 @@ internal class ViewModel : NotifyPropertyChangedBase
 	private void NewProjectHandler(object? param)
 	{
 		Debug.Assert(param == null);
-		var dialog = new TextInputDialog("New Project");
+		var dialog = new TextInputDialog("New Project", "Project Name", "");
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value)
 		{
-			Database.AddProject(dialog.Result);
+			Database.AddProject(dialog.Result1);
 		}
 	}
 
@@ -61,16 +65,16 @@ internal class ViewModel : NotifyPropertyChangedBase
 			return;
 		}
 		MossyProject project = (MossyProject)param;
-		var dialog = new TextInputDialog("Rename", project.Name);
+		var dialog = new TextInputDialog("Rename", "Project Name", project.Name);
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value)
 		{
-			if (dialog.Result == project.Name)
+			if (dialog.Result1 == project.Name)
 			{
 				// Name didn't change
 				return;
 			}
-			Database.RenameProject(project, dialog.Result);
+			Database.RenameProject(project, dialog.Result1);
 		}
 	}
 
@@ -103,11 +107,11 @@ internal class ViewModel : NotifyPropertyChangedBase
 			Debug.Assert(false, "No project selected!?");
 			return;
 		}
-		var dialog = new TextInputDialog("Add Alt Name");
+		var dialog = new TextInputDialog("Add Name", "Name", "");
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value)
 		{
-			Database.AddProjectAltName(SelectedProject, dialog.Result);
+			Database.AddProjectAltName(SelectedProject, dialog.Result1);
 		}
 	}
 
@@ -142,20 +146,20 @@ internal class ViewModel : NotifyPropertyChangedBase
 			return;
 		}
 		string filename = Path.GetFileName(document.Path.Path);
-		var dialog = new TextInputDialog("Rename", filename);
+		var dialog = new TextInputDialog("Rename", "File Name", filename);
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value)
 		{
-			if (dialog.Result == document.Path.Path)
+			if (dialog.Result1 == document.Path.Path)
 			{
 				// Name didn't change
 				return;
 			}
-			bool success = Database.RenameDocument(document, dialog.Result);
+			bool success = Database.RenameDocument(document, dialog.Result1);
 			if (success)
 			{
 				string oldFileExt = Path.GetExtension(filename);
-				string newFileExt = Path.GetExtension(dialog.Result);
+				string newFileExt = Path.GetExtension(dialog.Result1);
 				if (oldFileExt != newFileExt)
 				{
 					MessageBox.Show(
@@ -183,7 +187,6 @@ internal class ViewModel : NotifyPropertyChangedBase
 			Database.DeleteDocument(document, SelectedProject);
 		}
 	}
-
 
 	private static DragDropEffects GetDragEffect(DragDropEffects allowed)
 	{
@@ -324,23 +327,122 @@ internal class ViewModel : NotifyPropertyChangedBase
 	}
 
 
+	private void AddTagHandler(object? param)
+	{
+		Debug.Assert(param == null);
+		var dialog = new TextInputDialog("New Tag",
+			"Tag Name", "", "Tag Category", "");
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result1.Length == 0)
+			{
+				MessageBox.Show(
+					"Tag must have a name!",
+					"Failed to create new tag",
+					MessageBoxButton.OK, MessageBoxImage.Information);
+				return;
+			}
+			Database.AddTag(dialog.Result1, dialog.Result2);
+		}
+	}
+
+	private void DeleteTagHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid DeleteTag parameter!");
+			return;
+		}
+		MossyTag tag = (MossyTag)param;
+		Database.DeleteTag(tag);
+	}
+
+	private void RenameTagHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid RenameTag parameter!");
+			return;
+		}
+		MossyTag tag = (MossyTag)param;
+
+		var dialog = new TextInputDialog("Rename", "Tag Name", tag.Name);
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result1 == tag.Name)
+			{
+				return;
+			}
+			Database.RenameTag(tag, dialog.Result1);
+		}
+	}
+
+	private void RecategorizeTagHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid RecategorizeTag parameter!");
+			return;
+		}
+		MossyTag tag = (MossyTag)param;
+
+		var dialog = new TextInputDialog("Set Category", "Tag Category", tag.Category);
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result1 == tag.Category)
+			{
+				return;
+			}
+			Database.RecategorizeTag(tag, dialog.Result1);
+		}
+	}
+
+
 	public IMossyDatabase Database { get; }
 
 	private MossyProject? selectedProject;
 	public MossyProject? SelectedProject
 	{
 		get => selectedProject;
-		set { selectedProject = value; OnPropertyChanged(); }
+		set
+		{
+			selectedProject = value;
+			OnPropertyChanged("SelectedProject");
+
+			selectedTag = null;
+			OnPropertyChanged("SelectedTag");
+		}
 	}
 
-	public ICommand? NewDatabaseCommand { get; private set; }
-	public ICommand? OpenDatabaseCommand { get; private set; }
-	public ICommand? CloseDatabaseCommand { get; private set; }
-	public ICommand? NewProjectCommand { get; private set; }
-	public ICommand? RenameProjectCommand { get; private set; }
-	public ICommand? DeleteProjectCommand { get; private set; }
-	public ICommand? AddProjectAltNameCommand { get; private set; }
-	public ICommand? DeleteProjectAltNameCommand { get; private set; }
-	public ICommand? RenameDocumentCommand { get; private set; }
-	public ICommand? DeleteDocumentCommand { get; private set; }
+	private MossyTag? selectedTag;
+	public MossyTag? SelectedTag
+	{
+		get => selectedTag;
+		set
+		{
+			selectedTag = value;
+			OnPropertyChanged("SelectedTag");
+
+			selectedProject = null;
+			OnPropertyChanged("SelectedProject");
+		}
+	}
+
+	public ICommand? NewDatabaseCommand				{ get; }
+	public ICommand? OpenDatabaseCommand			{ get; }
+	public ICommand? CloseDatabaseCommand			{ get; }
+	public ICommand? NewProjectCommand				{ get; }
+	public ICommand? RenameProjectCommand			{ get; }
+	public ICommand? DeleteProjectCommand			{ get; }
+	public ICommand? AddProjectAltNameCommand		{ get; }
+	public ICommand? DeleteProjectAltNameCommand	{ get; }
+	public ICommand? RenameDocumentCommand			{ get; }
+	public ICommand? DeleteDocumentCommand			{ get; }
+	public ICommand? AddTagCommand					{ get; }
+	public ICommand? DeleteTagCommand				{ get; }
+	public ICommand? RenameTagCommand				{ get; }
+	public ICommand? RecategorizeTagCommand			{ get; }
 }

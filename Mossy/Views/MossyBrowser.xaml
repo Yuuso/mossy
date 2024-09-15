@@ -26,7 +26,7 @@
 				</MenuItem>
 			</Menu>
 
-			<Grid DockPanel.Dock="Top">
+			<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
 				<Button
 					Content="ADD PROJECT"
 					Width="400"
@@ -34,13 +34,24 @@
 					FontSize="22"
 					Margin="5"
 					Command="{Binding NewProjectCommand}"/>
-			</Grid>
+				<Button
+					Content="ADD TAG"
+					Width="400"
+					Height="40"
+					FontSize="22"
+					Margin="5"
+					Command="{Binding AddTagCommand}"/>
+			</StackPanel>
 
 			<Grid>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition MinWidth="200"/>
 					<ColumnDefinition MinWidth="200"/>
 				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="*"/>
+				</Grid.RowDefinitions>
 
 				<Border
 					Grid.Column="0"
@@ -84,12 +95,61 @@
 					</ListBox>
 				</Border>
 
+				<Border
+					Grid.Column="0"
+					Grid.Row="1"
+					Margin="23, 20"
+					CornerRadius="10"
+					Background="Gray">
+
+					<ListBox
+						Background="Transparent"
+						BorderBrush="Transparent"
+						ItemsSource="{Binding Database.Tags}"
+						SelectedItem="{Binding SelectedTag}"
+						IsSynchronizedWithCurrentItem="True">
+
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<Border Background="DarkGoldenrod" Height="60" Margin="4">
+									<TextBlock
+										Text="{Binding Name}"
+										FontSize="28"
+										Foreground="Black"
+										Margin="4"/>
+
+									<Border.ContextMenu>
+										<ContextMenu>
+											<MenuItem
+													Header="Rename"
+													Command="{Binding DataContext.RenameTagCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding}"/>
+											<MenuItem
+													Header="Recategorize"
+													Command="{Binding DataContext.RecategorizeTagCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding}"/>
+											<Separator/>
+											<MenuItem
+													Header="Delete"
+													Foreground="Red"
+													Command="{Binding DataContext.DeleteTagCommand, Source={x:Reference MossyBrowserRoot}}"
+													CommandParameter="{Binding}"/>
+										</ContextMenu>
+									</Border.ContextMenu>
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ListBox>
+				</Border>
+
 				<GridSplitter
+					Grid.RowSpan="2"
 					Background="CadetBlue"
 					Width="3"/>
 
 				<Border
 					Grid.Column="1"
+					Grid.RowSpan="2"
 					x:Name="ProjectBorder"
 					Background="DimGray"
 					BorderThickness="2"
