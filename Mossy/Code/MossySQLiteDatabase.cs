@@ -4,14 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
-using System.Transactions;
 using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Media;
-using System.Xml.Linq;
 
 namespace Mossy;
 
@@ -76,6 +69,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		if (!File.Exists(databasePath))
 		{
 			MessageBox.Show("Database doesn't exist!", "Error", MessageBoxButton.OK);
+			Deinit();
 			return;
 		}
 
@@ -567,15 +561,15 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		using var transaction = connection.BeginTransaction();
-
 		using var command = connection.CreateCommand();
+
+
 		command.CommandText =
 		@"
 			DELETE FROM projects
 			WHERE project_id = $id;
 		";
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
-
 		try
 		{
 			var result = command.ExecuteNonQuery();
@@ -587,6 +581,26 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
+
+		command.CommandText =
+		@"
+			DELETE FROM project_tag
+			WHERE project_id = $id;
+		";
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to delete tag from project!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
 
 		if (true)
 		{
@@ -612,6 +626,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				return false;
 			}
 		}
+
 
 		var removed = Projects.Remove(project);
 		Debug.Assert(removed);
@@ -641,8 +656,8 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		using var transaction = connection.BeginTransaction();
-
 		using var command = connection.CreateCommand();
+
 		command.CommandText =
 		@"
 			UPDATE projects
@@ -967,15 +982,15 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		using var transaction = connection.BeginTransaction();
-
 		using var command = connection.CreateCommand();
+
+
 		command.CommandText =
 		@"
 			DELETE FROM tags
 			WHERE tag_id = $id;
 		";
 		command.Parameters.AddWithValue("$id", tag.TagId.Value);
-
 		try
 		{
 			var result = command.ExecuteNonQuery();
@@ -987,6 +1002,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
 
 		command.CommandText =
 		@"
@@ -1005,6 +1021,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
 
 		if (true)
 		{
@@ -1030,6 +1047,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				return false;
 			}
 		}
+
 
 		transaction.Commit();
 
@@ -1232,12 +1250,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			return false;
 		}
 
-		using var transaction = connection.BeginTransaction();
-
 		var documentDateCreated = DateTimeOffset.Now;
 		long documentId;
 
+		using var transaction = connection.BeginTransaction();
 		using var command = connection.CreateCommand();
+
+
 		command.CommandText =
 		@"
 			INSERT INTO documents (path, date_created)
@@ -1261,6 +1280,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			return false;
 		}
 
+
 		command.CommandText =
 		@"
 			INSERT INTO tag_document (tag_id, document_id)
@@ -1279,6 +1299,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
 
 		transaction.Commit();
 
@@ -1527,15 +1548,15 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		using var transaction = connection.BeginTransaction();
-
 		using var command = connection.CreateCommand();
+
+
 		command.CommandText =
 		@"
 			DELETE FROM documents
 			WHERE document_id = $id;
 		";
 		command.Parameters.AddWithValue("$id", document.DocumentId.Value);
-
 		try
 		{
 			var result = command.ExecuteNonQuery();
@@ -1547,6 +1568,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
 
 		command.CommandText =
 		@"
@@ -1568,6 +1590,33 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			return false;
 		}
 
+
+		if (true)
+		{
+			// Sanity check, document should only be in a project of a tag.
+			command.CommandText =
+			@"
+				SELECT COUNT(*)
+				FROM tag_document
+				WHERE document_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", document.DocumentId.Value);
+			try
+			{
+				var result = command.ExecuteScalar();
+				Debug.Assert(result != null);
+				Debug.Assert((long)result == 0);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to validate tag document database!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+
 		if (document.Path.Type == MossyDocumentPathType.File)
 		{
 			string path = GetAbsolutePath(document);
@@ -1584,10 +1633,12 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			}
 		}
 
+
+		transaction.Commit();
+
 		var removed = project.Documents.Remove(document);
 		Debug.Assert(removed);
 
-		transaction.Commit();
 		return true;
 	}
 
@@ -1614,15 +1665,15 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		using var transaction = connection.BeginTransaction();
-
 		using var command = connection.CreateCommand();
+
+
 		command.CommandText =
 		@"
 			DELETE FROM documents
 			WHERE document_id = $id;
 		";
 		command.Parameters.AddWithValue("$id", document.DocumentId.Value);
-
 		try
 		{
 			var result = command.ExecuteNonQuery();
@@ -1634,6 +1685,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			transaction.Rollback();
 			return false;
 		}
+
 
 		command.CommandText =
 		@"
@@ -1655,6 +1707,33 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			return false;
 		}
 
+
+		if (true)
+		{
+			// Sanity check, document should only be in a project of a tag.
+			command.CommandText =
+			@"
+				SELECT COUNT(*)
+				FROM project_document
+				WHERE document_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", document.DocumentId.Value);
+			try
+			{
+				var result = command.ExecuteScalar();
+				Debug.Assert(result != null);
+				Debug.Assert((long)result == 0);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to validate project document database!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+
 		if (document.Path.Type == MossyDocumentPathType.File)
 		{
 			string path = GetAbsolutePath(document);
@@ -1670,6 +1749,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				return false;
 			}
 		}
+
 
 		transaction.Commit();
 
@@ -1793,9 +1873,9 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	private MossyConfig config = new();
 	private string? databasePath;
-	private const string databaseFilename		= "mossy_database.db";
-	private const string dataFolder				= "data";
-	private const string projectFolderPrefix	= "PRJ_";
-	private const string tagFolderPrefix		= "TAG_";
-	private const string altNamesSeparator		= ";";
+	private const string databaseFilename       = "mossy_database.db";
+	private const string dataFolder             = "data";
+	private const string projectFolderPrefix    = "PRJ_";
+	private const string tagFolderPrefix        = "TAG_";
+	private const string altNamesSeparator      = ";";
 }
