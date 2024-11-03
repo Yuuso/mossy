@@ -620,7 +620,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool RenameProject(MossyProject project, string newName)
+	public bool SetProjectName(MossyProject project, string newName)
 	{
 		if (newName.Length == 0)
 		{
@@ -830,7 +830,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool RemoveProjectTag(MossyProject project, MossyTag tag)
+	public bool DeleteProjectTag(MossyProject project, MossyTag tag)
 	{
 		Debug.Assert(Projects.Contains(project));
 		Debug.Assert(tag.Projects.Contains(project));
@@ -1047,7 +1047,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool RenameTag(MossyTag tag, string newName)
+	public bool SetTagName(MossyTag tag, string newName)
 	{
 		Debug.Assert(tag.Name != newName);
 		Debug.Assert(newName != null && newName.Length > 0);
@@ -1089,7 +1089,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool RecategorizeTag(MossyTag tag, string newCategory)
+	public bool SetTagCategory(MossyTag tag, string newCategory)
 	{
 		Debug.Assert(tag.Category != newCategory);
 		Debug.Assert(newCategory != null);
@@ -1292,7 +1292,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	private bool AddDocumentFile(DragDropEffects operation, string path, MossyProject? project, MossyTag? tag)
+	private bool AddDocument(DragDropEffects operation, string path, MossyProject? project, MossyTag? tag)
 	{
 		Debug.Assert(project != null || tag != null);
 		Debug.Assert(!(project != null && tag != null));
@@ -1460,21 +1460,21 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool AddDocumentFile(DragDropEffects operation, MossyProject project, string path)
+	public bool AddDocument(DragDropEffects operation, MossyProject project, string path)
 	{
-		return AddDocumentFile(operation, path, project, null);
+		return AddDocument(operation, path, project, null);
 	}
 
-	public bool AddDocumentFile(DragDropEffects operation, MossyTag tag, string path)
+	public bool AddDocument(DragDropEffects operation, MossyTag tag, string path)
 	{
-		return AddDocumentFile(operation, path, null, tag);
+		return AddDocument(operation, path, null, tag);
 	}
 
-	public bool AddDocumentString(MossyProject project, string data)
+	public bool AddDocument(MossyProject project, string data)
 	{
 		if (Directory.Exists(data) || File.Exists(data))
 		{
-			return AddDocumentFile(DragDropEffects.Link, project, data);
+			return AddDocument(DragDropEffects.Link, project, data);
 		}
 		else if (MossyUtils.IsValidUrl(data))
 		{
@@ -1487,11 +1487,11 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return false;
 	}
 
-	public bool AddDocumentString(MossyTag tag, string data)
+	public bool AddDocument(MossyTag tag, string data)
 	{
 		if (Directory.Exists(data) || File.Exists(data))
 		{
-			return AddDocumentFile(DragDropEffects.Link, tag, data);
+			return AddDocument(DragDropEffects.Link, tag, data);
 		}
 		else if (MossyUtils.IsValidUrl(data))
 		{
@@ -1679,7 +1679,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
-	public bool RenameDocument(MossyDocument document, string newName)
+	public bool SetDocumentName(MossyDocument document, string newName)
 	{
 		if (document.Path.Type != MossyDocumentPathType.File)
 		{

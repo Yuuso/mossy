@@ -227,24 +227,24 @@ internal interface IMossyDatabase
 
 	public bool AddProject(string name);
 	public bool DeleteProject(MossyProject project);
-	public bool RenameProject(MossyProject project, string newName);
+	public bool SetProjectName(MossyProject project, string newName);
 	public bool AddProjectAltName(MossyProject project, string altName);
 	public bool DeleteProjectAltName(MossyProject project, string altName);
 	public bool AddProjectTag(MossyProject project, MossyTag tag);
-	public bool RemoveProjectTag(MossyProject project, MossyTag tag);
+	public bool DeleteProjectTag(MossyProject project, MossyTag tag);
 
 	public bool AddTag(string name, string category);
 	public bool DeleteTag(MossyTag tag);
-	public bool RenameTag(MossyTag tag, string newName);
-	public bool RecategorizeTag(MossyTag tag, string newCategory);
+	public bool SetTagName(MossyTag tag, string newName);
+	public bool SetTagCategory(MossyTag tag, string newCategory);
 
-	public bool AddDocumentFile(DragDropEffects operation, MossyProject project, string path);
-	public bool AddDocumentFile(DragDropEffects operation, MossyTag tag, string path);
-	public bool AddDocumentString(MossyProject project, string data);
-	public bool AddDocumentString(MossyTag tag, string data);
+	public bool AddDocument(DragDropEffects operation, MossyProject project, string path);
+	public bool AddDocument(DragDropEffects operation, MossyTag tag, string path);
+	public bool AddDocument(MossyProject project, string data);
+	public bool AddDocument(MossyTag tag, string data);
 	public bool DeleteDocument(MossyDocument document, MossyProject project);
 	public bool DeleteDocument(MossyDocument document, MossyTag tag);
-	public bool RenameDocument(MossyDocument document, string newName);
+	public bool SetDocumentName(MossyDocument document, string newName);
 
 	public string GetAbsolutePath(MossyDocument document);
 

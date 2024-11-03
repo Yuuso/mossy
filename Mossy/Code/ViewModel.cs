@@ -78,7 +78,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 				// Name didn't change
 				return;
 			}
-			Database.RenameProject(project, dialog.Result1);
+			Database.SetProjectName(project, dialog.Result1);
 		}
 	}
 
@@ -157,7 +157,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 		MossyTag tag = (MossyTag)param;
 
-		Database.RemoveProjectTag(SelectedProject, tag);
+		Database.DeleteProjectTag(SelectedProject, tag);
 	}
 
 
@@ -209,7 +209,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			{
 				return;
 			}
-			Database.RenameTag(tag, dialog.Result1);
+			Database.SetTagName(tag, dialog.Result1);
 		}
 	}
 
@@ -230,7 +230,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			{
 				return;
 			}
-			Database.RecategorizeTag(tag, dialog.Result1);
+			Database.SetTagCategory(tag, dialog.Result1);
 		}
 	}
 
@@ -260,7 +260,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 				// Name didn't change
 				return;
 			}
-			bool success = Database.RenameDocument(document, dialog.Result1);
+			bool success = Database.SetDocumentName(document, dialog.Result1);
 			if (success)
 			{
 				string oldFileExt = Path.GetExtension(filename);
@@ -393,12 +393,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 			string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
 			if (SelectedProject != null)
 			{
-				Database.AddDocumentString(SelectedProject, dataString);
+				Database.AddDocument(SelectedProject, dataString);
 			}
 			else
 			{
 				Debug.Assert(SelectedTag != null);
-				Database.AddDocumentString(SelectedTag, dataString);
+				Database.AddDocument(SelectedTag, dataString);
 			}
 		}
 		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -414,12 +414,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 			{
 				if (SelectedProject != null)
 				{
-					Database.AddDocumentFile(effect, SelectedProject, path);
+					Database.AddDocument(effect, SelectedProject, path);
 				}
 				else
 				{
 					Debug.Assert(SelectedTag != null);
-					Database.AddDocumentFile(effect, SelectedTag, path);
+					Database.AddDocument(effect, SelectedTag, path);
 				}
 			}
 		}
