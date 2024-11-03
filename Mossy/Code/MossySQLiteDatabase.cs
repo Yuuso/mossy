@@ -481,6 +481,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		{
 			return false;
 		}
+
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
 		try
@@ -642,6 +643,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			MessageBox.Show("Name cannot be empty.", "Failed to rename project!", MessageBoxButton.OK);
 			return false;
 		}
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to set project name!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -689,6 +697,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 	{
 		if (!ValidateProjectName(altName))
 		{
+			return false;
+		}
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to add project alt name!", MessageBoxButton.OK);
 			return false;
 		}
 
@@ -742,7 +757,21 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool DeleteProjectAltName(MossyProject project, string altName)
 	{
-		Debug.Assert(project.AltNames.Contains(altName));
+		if (!project.AltNames.Contains(altName))
+		{
+			MessageBox.Show(
+				$"Name {altName} not found in the project.",
+				"Failed to delete project alt name", MessageBoxButton.OK);
+			return false;
+		}
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to delete project alt name", MessageBoxButton.OK);
+			return false;
+		}
+
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
 		try
@@ -804,10 +833,34 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool AddProjectTag(MossyProject project, MossyTag tag)
 	{
-		Debug.Assert(Projects.Contains(project));
-		Debug.Assert(Tags.Contains(tag));
-		Debug.Assert(!project.Tags.Contains(tag));
-		Debug.Assert(!tag.Projects.Contains(project));
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to add tag to project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Tag (id={tag.TagId}) not found.",
+				"Failed to add tag to project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (project.Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Project is already tagged with {tag.Name}.",
+				"Failed to add tag to project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (tag.Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project already found in tag (id={tag.TagId})?!",
+				"Failed to add tag to project!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -847,10 +900,34 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool DeleteProjectTag(MossyProject project, MossyTag tag)
 	{
-		Debug.Assert(Projects.Contains(project));
-		Debug.Assert(tag.Projects.Contains(project));
-		Debug.Assert(Tags.Contains(tag));
-		Debug.Assert(project.Tags.Contains(tag));
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to delete tag from project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Tag (id={tag.TagId}) not found.",
+				"Failed to delete tag from project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!project.Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Project is not tagged with {tag.Name}.",
+				"Failed to delete tag from project!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!tag.Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project not found in tag (id={tag.TagId})?!",
+				"Failed to delete tag from project!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -897,8 +974,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool AddTag(string name, string category)
 	{
-		Debug.Assert(name != null && name.Length > 0);
-		Debug.Assert(category != null);
+		if (name.Length <= 0)
+		{
+			MessageBox.Show(
+				$"Invalid name '{name}'.",
+				"Failed to add new tag!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -1067,8 +1149,20 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool SetTagName(MossyTag tag, string newName)
 	{
-		Debug.Assert(tag.Name != newName);
-		Debug.Assert(newName != null && newName.Length > 0);
+		if (tag.Name == newName)
+		{
+			MessageBox.Show(
+				$"Tag name is already '{newName}'.",
+				"Failed to set tag name!", MessageBoxButton.OK);
+			return false;
+		}
+		if (newName.Length <= 0)
+		{
+			MessageBox.Show(
+				$"Invalid name '{newName}'.",
+				"Failed to set tag name!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -1109,8 +1203,13 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	public bool SetTagCategory(MossyTag tag, string newCategory)
 	{
-		Debug.Assert(tag.Category != newCategory);
-		Debug.Assert(newCategory != null);
+		if (tag.Category == newCategory)
+		{
+			MessageBox.Show(
+				$"Tag category is already '{newCategory}'.",
+				"Failed to set tag category!", MessageBoxButton.OK);
+			return false;
+		}
 
 		Debug.Assert(databasePath != null);
 		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
@@ -1152,6 +1251,17 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	private bool AddDocument(MossyDocumentPath documentPath, MossyProject project)
 	{
+		foreach (MossyDocument doc in project.Documents)
+		{
+			if (doc.Path.RawPath == documentPath.RawPath)
+			{
+				MessageBox.Show(
+					"Document already found in project.",
+					"Failed to add document!", MessageBoxButton.OK);
+				return false;
+			}
+		}
+
 		Debug.Assert(databasePath != null);
 		if (documentPath.Type == MossyDocumentPathType.Unknown)
 		{
@@ -1232,9 +1342,21 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	private bool AddDocument(MossyDocumentPath documentPath, MossyTag tag)
 	{
+		foreach (MossyDocument doc in tag.Documents)
+		{
+			if (doc.Path.RawPath == documentPath.RawPath)
+			{
+				MessageBox.Show(
+					"Document already found in tag.",
+					"Failed to add document!", MessageBoxButton.OK);
+				return false;
+			}
+		}
 		if (documentPath.Type == MossyDocumentPathType.Unknown)
 		{
-			MessageBox.Show("Unknown document type.", "Failed to add document!", MessageBoxButton.OK);
+			MessageBox.Show(
+				"Unknown document type.",
+				"Failed to add document!", MessageBoxButton.OK);
 			return false;
 		}
 
@@ -1315,7 +1437,20 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 	private bool AddDocument(DragDropEffects operation, string path, MossyProject? project, MossyTag? tag)
 	{
-		Debug.Assert(project != null || tag != null);
+		if (project == null && tag == null)
+		{
+			MessageBox.Show(
+				"No valid project or tag provided.",
+				"Failed to add document!", MessageBoxButton.OK);
+			return false;
+		}
+		if (project != null && tag != null)
+		{
+			MessageBox.Show(
+				"Both a valid project AND a tag provided.",
+				"Failed to add document!", MessageBoxButton.OK);
+			return false;
+		}
 		Debug.Assert(!(project != null && tag != null));
 
 		if (Directory.Exists(path))
