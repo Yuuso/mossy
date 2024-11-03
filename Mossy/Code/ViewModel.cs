@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection.Metadata;
@@ -13,6 +14,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public ViewModel()
 	{
 		Database = new MossySQLiteDatabase();
+		MediaPlayer = new MediaPlayerViewModel();
 		NewDatabaseCommand = new DelegateCommand(NewDatabaseHandler);
 		OpenDatabaseCommand = new DelegateCommand(OpenDatabaseHandler);
 		CloseDatabaseCommand = new DelegateCommand(CloseDatabaseHandler);
@@ -21,6 +23,8 @@ internal class ViewModel : NotifyPropertyChangedBase
 		DeleteProjectCommand = new DelegateCommand(DeleteProjectHandler);
 		AddProjectAltNameCommand = new DelegateCommand(AddProjectAltNameHandler);
 		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
+		AddProjectTagCommand = new DelegateCommand(AddProjectTagHandler);
+		RemoveProjectTagCommand = new DelegateCommand(RemoveProjectTagHandler);
 		RenameDocumentCommand = new DelegateCommand(RenameDocumentHandler);
 		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
 		AddTagCommand = new DelegateCommand(AddTagHandler);
@@ -130,200 +134,30 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Database.DeleteProjectAltName(SelectedProject, (string)param);
 	}
 
-
-	private void RenameDocumentHandler(object? param)
+	private void AddProjectTagHandler(object? param)
 	{
-		if (param == null || param is not MossyDocument)
-		{
-			Debug.Assert(false, "Invalid RenameDocument parameter!");
-			return;
-		}
 		Debug.Assert(SelectedProject != null);
-		MossyDocument document = (MossyDocument)param;
-		if (document.Path.Type != MossyDocumentPathType.File)
+		if (param == null || param is not MossyTag)
 		{
-			MessageBox.Show("Cannot rename this type of document.", "Error!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+			Debug.Assert(false, "Invalid AddProjectTag parameter!");
 			return;
 		}
-		string filename = Path.GetFileName(document.Path.Path);
-		var dialog = new TextInputDialog("Rename", "File Name", filename);
-		var result = dialog.ShowDialog();
-		if (result.HasValue && result.Value)
-		{
-			if (dialog.Result1 == document.Path.Path)
-			{
-				// Name didn't change
-				return;
-			}
-			bool success = Database.RenameDocument(document, dialog.Result1);
-			if (success)
-			{
-				string oldFileExt = Path.GetExtension(filename);
-				string newFileExt = Path.GetExtension(dialog.Result1);
-				if (oldFileExt != newFileExt)
-				{
-					MessageBox.Show(
-						"File extension changed!" + Environment.NewLine + $"'{oldFileExt}' -> '{newFileExt}'",
-						"Rename", MessageBoxButton.OK, MessageBoxImage.Warning);
-				}
-			}
-		}
+		MossyTag tag = (MossyTag)param;
+
+		Database.AddProjectTag(SelectedProject, tag);
 	}
 
-	private void DeleteDocumentHandler(object? param)
+	private void RemoveProjectTagHandler(object? param)
 	{
-		if (param == null || param is not MossyDocument)
-		{
-			Debug.Assert(false, "Invalid DeleteDocument parameter!");
-			return;
-		}
 		Debug.Assert(SelectedProject != null);
-		MossyDocument document = (MossyDocument)param;
-		var result = MessageBox.Show(
-			$"Delete document '{document.Path.Path}'?" + Environment.NewLine + "This operation cannot be undone!",
-			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-		if (result == MessageBoxResult.Yes)
+		if (param == null || param is not MossyTag)
 		{
-			Database.DeleteDocument(document, SelectedProject);
-		}
-	}
-
-	private static DragDropEffects GetDragEffect(DragDropEffects allowed)
-	{
-		if (Keyboard.IsKeyDown(Key.LeftAlt) ||
-			Keyboard.IsKeyDown(Key.RightAlt))
-		{
-			if (allowed.HasFlag(DragDropEffects.Link))
-			{
-				return DragDropEffects.Link;
-			}
-		}
-		if (allowed.HasFlag(DragDropEffects.Copy))
-		{
-			return DragDropEffects.Copy;
-		}
-		return DragDropEffects.None;
-	}
-
-	public void PreviewDocumentDragDrops(DragEventArgs e)
-	{
-		// Disallow drag and drop of files in current project
-		if (SelectedProject == null)
-		{
+			Debug.Assert(false, "Invalid AddProjectTag parameter!");
 			return;
 		}
-		if (e.Data.GetDataPresent(DataFormats.FileDrop))
-		{
-			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-			foreach (string path in paths)
-			{
-				foreach (var doc in SelectedProject.Documents)
-				{
-					if (doc.Path.Type == MossyDocumentPathType.File &&
-						path == Database.GetAbsolutePath(doc))
-					{
-						e.Effects = DragDropEffects.None;
-						e.Handled = true;
-						return;
-					}
-				}
-			}
-		}
-	}
+		MossyTag tag = (MossyTag)param;
 
-	public void DocumentDragOver(DragEventArgs e)
-	{
-		if (SelectedProject == null)
-		{
-			return;
-		}
-
-		e.Effects = DragDropEffects.None;
-		if (e.Data.GetDataPresent(DataFormats.StringFormat))
-		{
-			if (e.AllowedEffects.HasFlag(DragDropEffects.Link))
-			{
-				e.Effects = DragDropEffects.Link;
-			}
-		}
-		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-		{
-			e.Effects = GetDragEffect(e.AllowedEffects);
-		}
-	}
-
-	public void DocumentDrop(DragEventArgs e)
-	{
-		if (SelectedProject == null)
-		{
-			return;
-		}
-
-		if (e.Data.GetDataPresent(DataFormats.StringFormat))
-		{
-			if (!e.AllowedEffects.HasFlag(DragDropEffects.Link))
-			{
-				return;
-			}
-
-			string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
-			Database.AddDocumentString(SelectedProject, dataString);
-		}
-		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-		{
-			var effect = GetDragEffect(e.AllowedEffects);
-			if (effect == DragDropEffects.None)
-			{
-				return;
-			}
-
-			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-			foreach (string path in paths)
-			{
-				Database.AddDocumentFile(effect, SelectedProject, path);
-			}
-		}
-	}
-
-	public void DocumentDoDragDrop(MossyDocument doc, DependencyObject source)
-	{
-		if (doc.Path.Type != MossyDocumentPathType.File)
-		{
-			return;
-		}
-
-		string[] paths = { Database.GetAbsolutePath(doc) };
-		var dataObject = new DataObject(DataFormats.FileDrop, paths);
-		DragDrop.DoDragDrop(source, dataObject, DragDropEffects.Copy);
-	}
-
-	public void DocumentDoubleClick(MossyDocument doc)
-	{
-		switch (doc.Path.Type)
-		{
-			default:
-				Debug.Assert(false);
-				break;
-
-			case MossyDocumentPathType.File:
-				{
-					string? extension = Path.GetExtension(doc.Path.Path);
-					Debug.Assert(extension != null);
-					MessageBox.Show($"Handle {extension} file double click action.", "TODO!", MessageBoxButton.OK, MessageBoxImage.Information);
-					//switch (extension)
-					//{
-					//	case ".":
-					//		break;
-					//}
-				}
-				break;
-			case MossyDocumentPathType.Link:
-				MossyUtils.ShowFileInExplorer(doc.Path.Path);
-				break;
-			case MossyDocumentPathType.Url:
-				MossyUtils.OpenUrl(doc.Path.Path);
-				break;
-		}
+		Database.RemoveProjectTag(SelectedProject, tag);
 	}
 
 
@@ -401,7 +235,262 @@ internal class ViewModel : NotifyPropertyChangedBase
 	}
 
 
+	private void RenameDocumentHandler(object? param)
+	{
+		if (param == null || param is not MossyDocument)
+		{
+			Debug.Assert(false, "Invalid RenameDocument parameter!");
+			return;
+		}
+		MossyDocument document = (MossyDocument)param;
+
+		if (document.Path.Type != MossyDocumentPathType.File)
+		{
+			MessageBox.Show("Cannot rename this type of document.", "Error!", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+			return;
+		}
+
+		string filename = Path.GetFileName(document.Path.Path);
+		var dialog = new TextInputDialog("Rename", "File Name", filename);
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result1 == document.Path.Path)
+			{
+				// Name didn't change
+				return;
+			}
+			bool success = Database.RenameDocument(document, dialog.Result1);
+			if (success)
+			{
+				string oldFileExt = Path.GetExtension(filename);
+				string newFileExt = Path.GetExtension(dialog.Result1);
+				if (oldFileExt != newFileExt)
+				{
+					MessageBox.Show(
+						"File extension changed!" + Environment.NewLine + $"'{oldFileExt}' -> '{newFileExt}'",
+						"Rename", MessageBoxButton.OK, MessageBoxImage.Warning);
+				}
+			}
+		}
+	}
+
+	private void DeleteDocumentHandler(object? param)
+	{
+		if (param == null || param is not MossyDocument)
+		{
+			Debug.Assert(false, "Invalid DeleteDocument parameter!");
+			return;
+		}
+		MossyDocument document = (MossyDocument)param;
+		Debug.Assert(SelectedProject != null || SelectedTag != null);
+
+		var result = MessageBox.Show(
+			$"Delete document '{document.Path.Path}'?" + Environment.NewLine + "This operation cannot be undone!",
+			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+		if (result == MessageBoxResult.Yes)
+		{
+			if (SelectedProject != null)
+			{
+				Database.DeleteDocument(document, SelectedProject);
+			}
+			else
+			{
+				Debug.Assert(SelectedTag != null);
+				Database.DeleteDocument(document, SelectedTag);
+			}
+		}
+	}
+
+	private static DragDropEffects GetDragEffect(DragDropEffects allowed)
+	{
+		if (Keyboard.IsKeyDown(Key.LeftAlt) ||
+			Keyboard.IsKeyDown(Key.RightAlt))
+		{
+			if (allowed.HasFlag(DragDropEffects.Link))
+			{
+				return DragDropEffects.Link;
+			}
+		}
+		if (allowed.HasFlag(DragDropEffects.Copy))
+		{
+			return DragDropEffects.Copy;
+		}
+		return DragDropEffects.None;
+	}
+
+	public void PreviewDocumentDragDrops(DragEventArgs e)
+	{
+		ObservableCollection<MossyDocument> documents;
+		if (SelectedProject != null)
+		{
+			documents = SelectedProject.Documents;
+		}
+		else if (SelectedTag != null)
+		{
+			documents = SelectedTag.Documents;
+		}
+		else
+		{
+			return;
+		}
+
+		// Disallow drag and drop of files in current project
+		if (e.Data.GetDataPresent(DataFormats.FileDrop))
+		{
+			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			foreach (string path in paths)
+			{
+				foreach (var doc in documents)
+				{
+					if (doc.Path.Type == MossyDocumentPathType.File &&
+						path == Database.GetAbsolutePath(doc))
+					{
+						e.Effects = DragDropEffects.None;
+						e.Handled = true;
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	public void DocumentDragOver(DragEventArgs e)
+	{
+		if (SelectedProject == null && SelectedTag != null)
+		{
+			return;
+		}
+
+		e.Effects = DragDropEffects.None;
+		if (e.Data.GetDataPresent(DataFormats.StringFormat))
+		{
+			if (e.AllowedEffects.HasFlag(DragDropEffects.Link))
+			{
+				e.Effects = DragDropEffects.Link;
+			}
+		}
+		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+		{
+			e.Effects = GetDragEffect(e.AllowedEffects);
+		}
+	}
+
+	public void DocumentDrop(DragEventArgs e)
+	{
+		if (SelectedProject == null && SelectedTag == null)
+		{
+			return;
+		}
+
+		if (e.Data.GetDataPresent(DataFormats.StringFormat))
+		{
+			if (!e.AllowedEffects.HasFlag(DragDropEffects.Link))
+			{
+				return;
+			}
+
+			string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
+			if (SelectedProject != null)
+			{
+				Database.AddDocumentString(SelectedProject, dataString);
+			}
+			else
+			{
+				Debug.Assert(SelectedTag != null);
+				Database.AddDocumentString(SelectedTag, dataString);
+			}
+		}
+		else if (e.Data.GetDataPresent(DataFormats.FileDrop))
+		{
+			var effect = GetDragEffect(e.AllowedEffects);
+			if (effect == DragDropEffects.None)
+			{
+				return;
+			}
+
+			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+			foreach (string path in paths)
+			{
+				if (SelectedProject != null)
+				{
+					Database.AddDocumentFile(effect, SelectedProject, path);
+				}
+				else
+				{
+					Debug.Assert(SelectedTag != null);
+					Database.AddDocumentFile(effect, SelectedTag, path);
+				}
+			}
+		}
+	}
+
+	public void DocumentDoDragDrop(MossyDocument doc, DependencyObject source)
+	{
+		if (doc.Path.Type != MossyDocumentPathType.File)
+		{
+			return;
+		}
+
+		string[] paths = { Database.GetAbsolutePath(doc) };
+		var dataObject = new DataObject(DataFormats.FileDrop, paths);
+		DragDrop.DoDragDrop(source, dataObject, DragDropEffects.Copy);
+	}
+
+	public void DocumentDoubleClick(MossyDocument doc)
+	{
+		switch (doc.Path.Type)
+		{
+
+			default:
+				Debug.Assert(false);
+				break;
+
+			case MossyDocumentPathType.File:
+				{
+					string? extension = Path.GetExtension(doc.Path.Path);
+					Debug.Assert(extension != null);
+					switch (extension)
+					{
+
+						default:
+							MessageBox.Show(
+								$"Handle {extension} file double click action.",
+								"TODO!", MessageBoxButton.OK, MessageBoxImage.Information);
+							break;
+
+						case ".ogg":
+							MessageBox.Show(
+								$"File type {extension} not supported.",
+								"Notice", MessageBoxButton.OK);
+							break;
+
+						case ".flac":
+						case ".mp3":
+						case ".wav":
+							MediaPlayer.LoadMedia(new Uri(
+								Database.GetAbsolutePath(doc),
+								UriKind.Absolute));
+							break;
+
+					}
+				}
+				break;
+
+			case MossyDocumentPathType.Link:
+				MossyUtils.ShowFileInExplorer(doc.Path.Path);
+				break;
+
+			case MossyDocumentPathType.Url:
+				MossyUtils.OpenUrl(doc.Path.Path);
+				break;
+
+		}
+	}
+
+
 	public IMossyDatabase Database { get; }
+	public MediaPlayerViewModel MediaPlayer { get; }
 
 	private MossyProject? selectedProject;
 	public MossyProject? SelectedProject
@@ -439,10 +528,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public ICommand? DeleteProjectCommand			{ get; }
 	public ICommand? AddProjectAltNameCommand		{ get; }
 	public ICommand? DeleteProjectAltNameCommand	{ get; }
-	public ICommand? RenameDocumentCommand			{ get; }
-	public ICommand? DeleteDocumentCommand			{ get; }
+	public ICommand? AddProjectTagCommand			{ get; }
+	public ICommand? RemoveProjectTagCommand		{ get; }
 	public ICommand? AddTagCommand					{ get; }
 	public ICommand? DeleteTagCommand				{ get; }
 	public ICommand? RenameTagCommand				{ get; }
 	public ICommand? RecategorizeTagCommand			{ get; }
+	public ICommand? RenameDocumentCommand			{ get; }
+	public ICommand? DeleteDocumentCommand			{ get; }
 }

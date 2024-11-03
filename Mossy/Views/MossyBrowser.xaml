@@ -8,6 +8,7 @@
     xmlns:local="clr-namespace:Mossy"
 	x:Name="MossyBrowserRoot"
     mc:Ignorable="d"
+	d:DataContext="{d:DesignInstance Type=local:ViewModel, IsDesignTimeCreatable=False}"
 	d:DesignWidth="1600"
     d:DesignHeight="900">
 
@@ -51,6 +52,7 @@
 				<Grid.RowDefinitions>
 					<RowDefinition Height="*"/>
 					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
 				</Grid.RowDefinitions>
 
 				<Border
@@ -219,6 +221,7 @@
 						<TextBlock Text="{Binding SelectedProject.ProjectId}" FontSize="20" Foreground="White"/>
 						<TextBlock Text="{Binding SelectedProject.DateCreated}" FontSize="20" Foreground="White"/>
 						<TextBlock Text="{Binding SelectedProject.Name}" FontSize="30" Foreground="White"/>
+
 						<ItemsControl ItemsSource="{Binding SelectedProject.AltNames}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
@@ -237,6 +240,38 @@
 						<Button
 							Content="Add Name"
 							Command="{Binding AddProjectAltNameCommand}"/>
+
+						<ItemsControl ItemsSource="{Binding SelectedProject.Tags}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal"/>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Button
+										Background="Beige"
+										Content="{Binding Name}"
+										Command="{Binding DataContext.RemoveProjectTagCommand, Source={x:Reference MossyBrowserRoot}}"
+										CommandParameter="{Binding}"/>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<Button Background="Beige" Content="Add Tag">
+							<Button.ContextMenu>
+								<ContextMenu ItemsSource="{Binding Database.Tags}">
+									<ContextMenu.ItemContainerStyle>
+										<Style TargetType="{x:Type MenuItem}">
+											<Setter Property="Header" Value="{Binding Name}"/>
+											<Setter Property="Command" Value="{
+												Binding Path=DataContext.AddProjectTagCommand,
+												RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+											<Setter Property="CommandParameter" Value="{Binding}"/>
+										</Style>
+									</ContextMenu.ItemContainerStyle>
+								</ContextMenu>
+							</Button.ContextMenu>
+						</Button>
 
 						<ItemsControl ItemsSource="{Binding SelectedProject.Documents}">
 							<ItemsControl.ItemTemplate>
@@ -278,6 +313,31 @@
 						</ItemsControl>
 					</StackPanel>
 				</Border>
+
+				<StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
+
+					<TextBlock Foreground="White"
+						Text="{Binding MediaPlayer.Position, StringFormat={}{0:mm\\:ss}}"/>
+					<TextBlock Foreground="White" Text=" / "/>
+					<TextBlock Foreground="White"
+						Text="{Binding MediaPlayer.Duration, StringFormat={}{0:mm\\:ss}}"/>
+
+					<Button Width="80" Height="80"
+							IsEnabled="{Binding MediaPlayer.IsLoaded}"
+							Command="{Binding MediaPlayer.PauseResumeCommand}">
+						<Button.Style>
+							<Style TargetType="Button">
+								<Setter Property="Content" Value="PLAY"/>
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding MediaPlayer.IsPlaying}" Value="{StaticResource True}">
+										<Setter Property="Content" Value="PAUSE"/>
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</Button.Style>
+					</Button>
+
+				</StackPanel>
 			</Grid>
 		</DockPanel>
 	</Grid>

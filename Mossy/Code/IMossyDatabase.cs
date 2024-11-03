@@ -178,6 +178,7 @@ internal class MossyTag : NotifyPropertyChangedBase
 		set { dateCreated = value; OnPropertyChanged(); }
 	}
 
+	public ObservableCollection<MossyProject> Projects { get; set; } = new();
 	public ObservableCollection<MossyDocument> Documents { get; set; } = new();
 }
 
@@ -229,16 +230,21 @@ internal interface IMossyDatabase
 	public bool RenameProject(MossyProject project, string newName);
 	public bool AddProjectAltName(MossyProject project, string altName);
 	public bool DeleteProjectAltName(MossyProject project, string altName);
-
-	public bool AddDocumentFile(DragDropEffects operation, MossyProject project, string path);
-	public bool AddDocumentString(MossyProject project, string data);
-	public bool DeleteDocument(MossyDocument document, MossyProject project);
-	public bool RenameDocument(MossyDocument document, string newName);
+	public bool AddProjectTag(MossyProject project, MossyTag tag);
+	public bool RemoveProjectTag(MossyProject project, MossyTag tag);
 
 	public bool AddTag(string name, string category);
 	public bool DeleteTag(MossyTag tag);
 	public bool RenameTag(MossyTag tag, string newName);
 	public bool RecategorizeTag(MossyTag tag, string newCategory);
+
+	public bool AddDocumentFile(DragDropEffects operation, MossyProject project, string path);
+	public bool AddDocumentFile(DragDropEffects operation, MossyTag tag, string path);
+	public bool AddDocumentString(MossyProject project, string data);
+	public bool AddDocumentString(MossyTag tag, string data);
+	public bool DeleteDocument(MossyDocument document, MossyProject project);
+	public bool DeleteDocument(MossyDocument document, MossyTag tag);
+	public bool RenameDocument(MossyDocument document, string newName);
 
 	public string GetAbsolutePath(MossyDocument document);
 
