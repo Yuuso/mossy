@@ -15,6 +15,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	{
 		Database = new MossySQLiteDatabase();
 		MediaPlayer = new MediaPlayerViewModel();
+		AboutCommand = new DelegateCommand(AboutHandler);
 		NewDatabaseCommand = new DelegateCommand(NewDatabaseHandler);
 		OpenDatabaseCommand = new DelegateCommand(OpenDatabaseHandler);
 		CloseDatabaseCommand = new DelegateCommand(CloseDatabaseHandler);
@@ -33,6 +34,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 		RecategorizeTagCommand = new DelegateCommand(RecategorizeTagHandler);
 	}
 
+
+	private void AboutHandler(object? param)
+	{
+		var about = new About();
+		about.ShowDialog();
+	}
 
 	private void NewDatabaseHandler(object? param)
 	{
@@ -520,6 +527,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? AboutCommand					{ get; }
 	public ICommand? NewDatabaseCommand				{ get; }
 	public ICommand? OpenDatabaseCommand			{ get; }
 	public ICommand? CloseDatabaseCommand			{ get; }

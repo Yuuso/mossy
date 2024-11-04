@@ -25,6 +25,7 @@
 					<Separator/>
 					<MenuItem Header="_Close Database" Command="{Binding CloseDatabaseCommand}"/>
 				</MenuItem>
+				<MenuItem Header="_About" Command="{Binding AboutCommand}"/>
 			</Menu>
 
 			<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
