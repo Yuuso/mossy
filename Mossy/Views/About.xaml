@@ -7,14 +7,20 @@
     xmlns:local="clr-namespace:Mossy"
 	SizeToContent="WidthAndHeight"
 	WindowStartupLocation="CenterScreen"
-	MinWidth="300"
+	MinWidth="550"
+	MinHeight="300"
+	Background="{StaticResource Brush-Background}"
     Title="About">
 
-    <Grid Margin="30">
+    <Grid Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center">
 		<StackPanel>
+			<StackPanel.Resources>
+				<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}"/>
+				<Style TargetType="Hyperlink" BasedOn="{StaticResource Style-Hyperlink}"/>
+			</StackPanel.Resources>
 
 			<TextBlock>Mossy</TextBlock>
-			<TextBlock>2024 © Juuso Turunen</TextBlock>
+			<TextBlock>© 2024 Juuso Turunen</TextBlock>
 
 			<TextBlock></TextBlock>
 
@@ -25,13 +31,11 @@
 			<TextBlock></TextBlock>
 
 			<TextBlock>
-				<Hyperlink Click="License_Click">Read Full License</Hyperlink>
+				<Hyperlink Click="License_Click">License</Hyperlink>
 			</TextBlock>
-
 			<TextBlock>
 				<Hyperlink Click="Source_Click">Source Code</Hyperlink>
 			</TextBlock>
-
 			<TextBlock>
 				<Hyperlink Click="ThirdParty_Click">Third Party Notices</Hyperlink>
 			</TextBlock>

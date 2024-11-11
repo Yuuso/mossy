@@ -5,7 +5,20 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Fonts\PlusJakartaSans-Italic-VariableFont_wght.ttf" />
+    <None Remove="Assets\Fonts\PlusJakartaSans-VariableFont_wght.ttf" />
+    <None Remove="Assets\Fonts\RobotoMono-VariableFont_wght.ttf" />
+    <None Remove="Assets\Logo.png" />
+    <None Remove="Assets\Logo.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Logo.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
@@ -14,7 +27,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Elements\" />
+    <Resource Include="Assets\Fonts\PlusJakartaSans-Italic-VariableFont_wght.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Fonts\PlusJakartaSans-VariableFont_wght.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\Fonts\RobotoMono-VariableFont_wght.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

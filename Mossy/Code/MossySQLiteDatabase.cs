@@ -89,6 +89,8 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		Projects.Clear();
 		config.Deinit();
 		databasePath = null;
+
+		UserSettings.Instance.LastDatabaseFolderPath = "";
 	}
 
 

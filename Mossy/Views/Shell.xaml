@@ -9,7 +9,7 @@
 	d:DesignWidth="1600"
     d:DesignHeight="900">
 
-	<Grid Background="#222223">
+	<Grid Background="{StaticResource Brush-Background}">
 
 		<local:StartView>
 			<local:StartView.Style>

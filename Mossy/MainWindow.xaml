@@ -6,10 +6,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:Mossy"
     Title="Mossy"
-	MinWidth="800"
-	MinHeight="800"
+	MinWidth="1280"
+	MinHeight="720"
 	Width="1600"
 	Height="900">
 
 	<local:Shell/>
+
 </Window>

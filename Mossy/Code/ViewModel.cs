@@ -15,6 +15,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	{
 		Database = new MossySQLiteDatabase();
 		MediaPlayer = new MediaPlayerViewModel();
+		ExitCommand = new DelegateCommand(ExitHandler);
 		AboutCommand = new DelegateCommand(AboutHandler);
 		NewDatabaseCommand = new DelegateCommand(NewDatabaseHandler);
 		OpenDatabaseCommand = new DelegateCommand(OpenDatabaseHandler);
@@ -35,9 +36,16 @@ internal class ViewModel : NotifyPropertyChangedBase
 	}
 
 
+	private void ExitHandler(object? param)
+	{
+		Application.Current.Shutdown();
+	}
+
 	private void AboutHandler(object? param)
 	{
 		var about = new About();
+		about.ShowInTaskbar = false;
+		about.Owner = Application.Current.MainWindow;
 		about.ShowDialog();
 	}
 
@@ -527,6 +535,20 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public bool AutoOpenLastDatabase
+	{
+		get
+		{
+			return UserSettings.Instance.AutoOpenLastDatabase;
+		}
+		set
+		{
+			UserSettings.Instance.AutoOpenLastDatabase = !UserSettings.Instance.AutoOpenLastDatabase;
+			OnPropertyChanged(nameof(AutoOpenLastDatabase));
+		}
+	}
+
+	public ICommand? ExitCommand					{ get; }
 	public ICommand? AboutCommand					{ get; }
 	public ICommand? NewDatabaseCommand				{ get; }
 	public ICommand? OpenDatabaseCommand			{ get; }

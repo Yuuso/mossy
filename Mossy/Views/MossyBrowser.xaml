@@ -19,23 +19,25 @@
 
 	<Grid>
 		<DockPanel>
-			<Menu DockPanel.Dock="top">
-				<MenuItem Header="_File">
-					<MenuItem Header="_Add Project" Command="{Binding NewProjectCommand}"/>
+			<Menu DockPanel.Dock="top" Background="#404040" Foreground="{StaticResource Brush-Foreground}">
+				<MenuItem Header="_File" Background="#404040">
+					<MenuItem Header="_Add Project" Command="{Binding NewProjectCommand}" Background="#404040"/>
 					<Separator/>
 					<MenuItem Header="_Close Database" Command="{Binding CloseDatabaseCommand}"/>
+					<MenuItem Header="_Exit" Command="{Binding ExitCommand}"/>
 				</MenuItem>
 				<MenuItem Header="_About" Command="{Binding AboutCommand}"/>
 			</Menu>
 
 			<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
 				<Button
-					Content="ADD PROJECT"
 					Width="400"
 					Height="40"
 					FontSize="22"
 					Margin="5"
-					Command="{Binding NewProjectCommand}"/>
+					Command="{Binding NewProjectCommand}">
+					<TextBlock Text="ADD PROJECT" FontFamily="{StaticResource Font-Sans}"/>
+				</Button>
 				<Button
 					Content="ADD TAG"
 					Width="400"
@@ -43,6 +45,8 @@
 					FontSize="22"
 					Margin="5"
 					Command="{Binding AddTagCommand}"/>
+
+				<TextBlock Text="TESTING" Foreground="White" FontSize="40" FontFamily="{DynamicResource Font-Sans}" FontWeight="Heavy" FontStyle="Italic"/>
 			</StackPanel>
 
 			<Grid>
@@ -219,9 +223,15 @@
 						HorizontalAlignment="Center"
 						VerticalAlignment="Center">
 
-						<TextBlock Text="{Binding SelectedProject.ProjectId}" FontSize="20" Foreground="White"/>
-						<TextBlock Text="{Binding SelectedProject.DateCreated}" FontSize="20" Foreground="White"/>
-						<TextBlock Text="{Binding SelectedProject.Name}" FontSize="30" Foreground="White"/>
+						<TextBlock
+							FontFamily="{StaticResource Font-Sans}"
+							Text="{Binding SelectedProject.ProjectId}" FontSize="20" Foreground="White"/>
+						<TextBlock
+							FontFamily="{StaticResource Font-Sans}"
+							Text="{Binding SelectedProject.DateCreated}" FontSize="20" Foreground="White"/>
+						<TextBlock
+							FontFamily="{StaticResource Font-Mono}"
+							Text="{Binding SelectedProject.Name}" FontSize="30" Foreground="White"/>
 
 						<ItemsControl ItemsSource="{Binding SelectedProject.AltNames}">
 							<ItemsControl.ItemsPanel>
