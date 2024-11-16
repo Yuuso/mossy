@@ -14,10 +14,6 @@
 
     <Grid Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center">
 		<StackPanel>
-			<StackPanel.Resources>
-				<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}"/>
-				<Style TargetType="Hyperlink" BasedOn="{StaticResource Style-Hyperlink}"/>
-			</StackPanel.Resources>
 
 			<TextBlock>Mossy</TextBlock>
 			<TextBlock>© 2024 Juuso Turunen</TextBlock>

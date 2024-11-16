@@ -507,6 +507,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 			SELECT last_insert_rowid();
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$name", projectName);
 		command.Parameters.AddWithValue("$date", projectDateCreated);
 		try
@@ -572,6 +573,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			DELETE FROM projects
 			WHERE project_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
 		try
 		{
@@ -591,11 +593,12 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			DELETE FROM project_tag
 			WHERE project_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
 		try
 		{
 			var result = command.ExecuteNonQuery();
-			Debug.Assert(result == 1);
+			Debug.Assert(result == project.Tags.Count);
 		}
 		catch (SqliteException e)
 		{
@@ -674,6 +677,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET name = $name
 			WHERE project_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$name", newName);
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
 
@@ -736,6 +740,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET alt_names = $names
 			WHERE project_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$names", altNames);
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
 
@@ -811,6 +816,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET alt_names = $names
 			WHERE project_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$names", altNames);
 		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
 
@@ -882,6 +888,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			INSERT INTO project_tag (project_id, tag_id)
 			VALUES ($pid, $tid);
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$pid", project.ProjectId.Value);
 		command.Parameters.AddWithValue("$tid", tag.TagId.Value);
 		try
@@ -950,6 +957,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			WHERE project_id = $pid
 			AND tag_id = $tid;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$pid", project.ProjectId.Value);
 		command.Parameters.AddWithValue("$tid", tag.TagId.Value);
 
@@ -1007,6 +1015,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 			SELECT last_insert_rowid();
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$name", name);
 		command.Parameters.AddWithValue("$cat", category);
 		command.Parameters.AddWithValue("$date", tagDateCreated);
@@ -1074,6 +1083,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			DELETE FROM tags
 			WHERE tag_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$id", tag.TagId.Value);
 		try
 		{
@@ -1097,7 +1107,8 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		command.Parameters.AddWithValue("$id", tag.TagId.Value);
 		try
 		{
-			_ = command.ExecuteNonQuery();
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == tag.Projects.Count);
 		}
 		catch (SqliteException e)
 		{
@@ -1185,6 +1196,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET name = $name
 			WHERE tag_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$name", newName);
 		command.Parameters.AddWithValue("$id", tag.TagId.Value);
 
@@ -1232,6 +1244,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET category = $cat
 			WHERE tag_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$cat", newCategory);
 		command.Parameters.AddWithValue("$id", tag.TagId.Value);
 
@@ -1295,6 +1308,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 			SELECT last_insert_rowid();
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$path", documentPath.RawPath);
 		command.Parameters.AddWithValue("$date", documentDateCreated);
 		try
@@ -1388,6 +1402,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 			SELECT last_insert_rowid();
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$path", documentPath.RawPath);
 		command.Parameters.AddWithValue("$date", documentDateCreated);
 		try
@@ -1693,6 +1708,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			DELETE FROM documents
 			WHERE document_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$id", document.DocumentId.Value);
 		try
 		{
@@ -1810,6 +1826,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			DELETE FROM documents
 			WHERE document_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$id", document.DocumentId.Value);
 		try
 		{
@@ -1948,6 +1965,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 			SET path = $path
 			WHERE document_id = $id;
 		";
+		command.Parameters.Clear();
 		command.Parameters.AddWithValue("$path", newMossyPath.RawPath);
 		command.Parameters.AddWithValue("$id", document.DocumentId.Value);
 

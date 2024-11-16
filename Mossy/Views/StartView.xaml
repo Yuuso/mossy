@@ -10,7 +10,7 @@
     d:DesignHeight="900">
 
 	<DockPanel>
-		<Menu DockPanel.Dock="Top" Style="{StaticResource Style-Menu}">
+		<Menu DockPanel.Dock="Top">
 			<MenuItem Header="_File">
 				<MenuItem Header="_New Database" Command="{Binding NewDatabaseCommand}"/>
 				<MenuItem Header="_Open Database" Command="{Binding OpenDatabaseCommand}"/>

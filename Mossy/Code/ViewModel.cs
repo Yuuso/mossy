@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace Mossy;
@@ -14,33 +15,52 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public ViewModel()
 	{
 		Database = new MossySQLiteDatabase();
+		Projects.Source = Database.Projects;
+		Projects.Filter += (sender, eventArgs) =>
+		{
+			eventArgs.Accepted = eventArgs.Item is MossyProject project &&
+				project.Name.Contains(SearchFilter);
+		};
+		Tags.Source = Database.Tags;
+		Tags.Filter += (sender, eventArgs) =>
+		{
+			eventArgs.Accepted = eventArgs.Item is MossyTag tag &&
+				tag.Name.Contains(SearchFilter);
+		};
+
 		MediaPlayer = new MediaPlayerViewModel();
+
 		ExitCommand = new DelegateCommand(ExitHandler);
 		AboutCommand = new DelegateCommand(AboutHandler);
 		NewDatabaseCommand = new DelegateCommand(NewDatabaseHandler);
 		OpenDatabaseCommand = new DelegateCommand(OpenDatabaseHandler);
 		CloseDatabaseCommand = new DelegateCommand(CloseDatabaseHandler);
-		NewProjectCommand = new DelegateCommand(NewProjectHandler);
-		RenameProjectCommand = new DelegateCommand(RenameProjectHandler);
+
+		AddProjectCommand = new DelegateCommand(AddProjectHandler);
+		SetProjectNameCommand = new DelegateCommand(SetProjectNameHandler);
 		DeleteProjectCommand = new DelegateCommand(DeleteProjectHandler);
 		AddProjectAltNameCommand = new DelegateCommand(AddProjectAltNameHandler);
 		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
 		AddProjectTagCommand = new DelegateCommand(AddProjectTagHandler);
-		RemoveProjectTagCommand = new DelegateCommand(RemoveProjectTagHandler);
-		RenameDocumentCommand = new DelegateCommand(RenameDocumentHandler);
-		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
+		DeleteProjectTagCommand = new DelegateCommand(DeleteProjectTagHandler);
+
 		AddTagCommand = new DelegateCommand(AddTagHandler);
 		DeleteTagCommand = new DelegateCommand(DeleteTagHandler);
 		RenameTagCommand = new DelegateCommand(RenameTagHandler);
-		RecategorizeTagCommand = new DelegateCommand(RecategorizeTagHandler);
+		SetTagCategoryCommand = new DelegateCommand(SetTagCategoryHandler);
+
+		SetDocumentNameCommand = new DelegateCommand(SetDocumentNameHandler);
+		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
 	}
 
 
+	public ICommand? ExitCommand { get; }
 	private void ExitHandler(object? param)
 	{
 		Application.Current.Shutdown();
 	}
 
+	public ICommand? AboutCommand { get; }
 	private void AboutHandler(object? param)
 	{
 		var about = new About();
@@ -49,23 +69,29 @@ internal class ViewModel : NotifyPropertyChangedBase
 		about.ShowDialog();
 	}
 
+	public ICommand? NewDatabaseCommand { get; }
 	private void NewDatabaseHandler(object? param)
 	{
 		Database.InitNew();
 	}
 
+	public ICommand? OpenDatabaseCommand { get; }
 	private void OpenDatabaseHandler(object? param)
 	{
 		Database.InitOpen();
 	}
 
+	public ICommand? CloseDatabaseCommand { get; }
 	private void CloseDatabaseHandler(object? param)
 	{
+		SelectedProject = null;
+		SelectedTag = null;
 		Database.Deinit();
 	}
 
 
-	private void NewProjectHandler(object? param)
+	public ICommand? AddProjectCommand { get; }
+	private void AddProjectHandler(object? param)
 	{
 		Debug.Assert(param == null);
 		var dialog = new TextInputDialog("New Project", "Project Name", "");
@@ -76,11 +102,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
-	private void RenameProjectHandler(object? param)
+	public ICommand? SetProjectNameCommand { get; }
+	private void SetProjectNameHandler(object? param)
 	{
 		if (param == null || param is not MossyProject)
 		{
-			Debug.Assert(false, "Invalid RenameProject parameter!");
+			Debug.Assert(false, "Invalid SetProjectName parameter!");
 			return;
 		}
 		MossyProject project = (MossyProject)param;
@@ -97,6 +124,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? DeleteProjectCommand { get; }
 	private void DeleteProjectHandler(object? param)
 	{
 		if (param == null || param is not MossyProject)
@@ -118,6 +146,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? AddProjectAltNameCommand { get; }
 	private void AddProjectAltNameHandler(object? param)
 	{
 		Debug.Assert(param == null);
@@ -134,6 +163,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? DeleteProjectAltNameCommand { get; }
 	private void DeleteProjectAltNameHandler(object? param)
 	{
 		if (param == null || param is not string)
@@ -149,6 +179,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Database.DeleteProjectAltName(SelectedProject, (string)param);
 	}
 
+	public ICommand? AddProjectTagCommand { get; }
 	private void AddProjectTagHandler(object? param)
 	{
 		Debug.Assert(SelectedProject != null);
@@ -162,12 +193,13 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Database.AddProjectTag(SelectedProject, tag);
 	}
 
-	private void RemoveProjectTagHandler(object? param)
+	public ICommand? DeleteProjectTagCommand { get; }
+	private void DeleteProjectTagHandler(object? param)
 	{
 		Debug.Assert(SelectedProject != null);
 		if (param == null || param is not MossyTag)
 		{
-			Debug.Assert(false, "Invalid AddProjectTag parameter!");
+			Debug.Assert(false, "Invalid DeleteProjectTag parameter!");
 			return;
 		}
 		MossyTag tag = (MossyTag)param;
@@ -176,6 +208,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	}
 
 
+	public ICommand? AddTagCommand { get; }
 	private void AddTagHandler(object? param)
 	{
 		Debug.Assert(param == null);
@@ -196,6 +229,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? DeleteTagCommand { get; }
 	private void DeleteTagHandler(object? param)
 	{
 		if (param == null || param is not MossyTag)
@@ -207,6 +241,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Database.DeleteTag(tag);
 	}
 
+	public ICommand? RenameTagCommand { get; }
 	private void RenameTagHandler(object? param)
 	{
 		if (param == null || param is not MossyTag)
@@ -228,11 +263,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
-	private void RecategorizeTagHandler(object? param)
+	public ICommand? SetTagCategoryCommand { get; }
+	private void SetTagCategoryHandler(object? param)
 	{
 		if (param == null || param is not MossyTag)
 		{
-			Debug.Assert(false, "Invalid RecategorizeTag parameter!");
+			Debug.Assert(false, "Invalid SetTagCategory parameter!");
 			return;
 		}
 		MossyTag tag = (MossyTag)param;
@@ -250,11 +286,12 @@ internal class ViewModel : NotifyPropertyChangedBase
 	}
 
 
-	private void RenameDocumentHandler(object? param)
+	public ICommand? SetDocumentNameCommand { get; }
+	private void SetDocumentNameHandler(object? param)
 	{
 		if (param == null || param is not MossyDocument)
 		{
-			Debug.Assert(false, "Invalid RenameDocument parameter!");
+			Debug.Assert(false, "Invalid SetDocumentName parameter!");
 			return;
 		}
 		MossyDocument document = (MossyDocument)param;
@@ -290,6 +327,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? DeleteDocumentCommand { get; }
 	private void DeleteDocumentHandler(object? param)
 	{
 		if (param == null || param is not MossyDocument)
@@ -316,6 +354,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			}
 		}
 	}
+
 
 	private static DragDropEffects GetDragEffect(DragDropEffects allowed)
 	{
@@ -505,7 +544,21 @@ internal class ViewModel : NotifyPropertyChangedBase
 
 
 	public IMossyDatabase Database { get; }
-	public MediaPlayerViewModel MediaPlayer { get; }
+	public CollectionViewSource Projects { get; } = new();
+	public CollectionViewSource Tags { get; } = new();
+
+	private string searchFilter = "";
+	public string SearchFilter
+	{
+		get => searchFilter;
+		set
+		{
+			searchFilter = value;
+
+			Projects.View.Refresh();
+			Tags.View.Refresh();
+		}
+	}
 
 	private MossyProject? selectedProject;
 	public MossyProject? SelectedProject
@@ -514,10 +567,10 @@ internal class ViewModel : NotifyPropertyChangedBase
 		set
 		{
 			selectedProject = value;
-			OnPropertyChanged("SelectedProject");
+			OnPropertyChanged(nameof(SelectedProject));
 
 			selectedTag = null;
-			OnPropertyChanged("SelectedTag");
+			OnPropertyChanged(nameof(SelectedTag));
 		}
 	}
 
@@ -528,42 +581,22 @@ internal class ViewModel : NotifyPropertyChangedBase
 		set
 		{
 			selectedTag = value;
-			OnPropertyChanged("SelectedTag");
+			OnPropertyChanged(nameof(SelectedTag));
 
 			selectedProject = null;
-			OnPropertyChanged("SelectedProject");
+			OnPropertyChanged(nameof(SelectedProject));
 		}
 	}
 
 	public bool AutoOpenLastDatabase
 	{
-		get
-		{
-			return UserSettings.Instance.AutoOpenLastDatabase;
-		}
+		get => UserSettings.Instance.AutoOpenLastDatabase;
 		set
 		{
 			UserSettings.Instance.AutoOpenLastDatabase = !UserSettings.Instance.AutoOpenLastDatabase;
-			OnPropertyChanged(nameof(AutoOpenLastDatabase));
+			OnPropertyChanged();
 		}
 	}
 
-	public ICommand? ExitCommand					{ get; }
-	public ICommand? AboutCommand					{ get; }
-	public ICommand? NewDatabaseCommand				{ get; }
-	public ICommand? OpenDatabaseCommand			{ get; }
-	public ICommand? CloseDatabaseCommand			{ get; }
-	public ICommand? NewProjectCommand				{ get; }
-	public ICommand? RenameProjectCommand			{ get; }
-	public ICommand? DeleteProjectCommand			{ get; }
-	public ICommand? AddProjectAltNameCommand		{ get; }
-	public ICommand? DeleteProjectAltNameCommand	{ get; }
-	public ICommand? AddProjectTagCommand			{ get; }
-	public ICommand? RemoveProjectTagCommand		{ get; }
-	public ICommand? AddTagCommand					{ get; }
-	public ICommand? DeleteTagCommand				{ get; }
-	public ICommand? RenameTagCommand				{ get; }
-	public ICommand? RecategorizeTagCommand			{ get; }
-	public ICommand? RenameDocumentCommand			{ get; }
-	public ICommand? DeleteDocumentCommand			{ get; }
+	public MediaPlayerViewModel MediaPlayer { get; }
 }

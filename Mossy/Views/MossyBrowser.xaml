@@ -1,167 +1,197 @@
 ﻿<UserControl
 	x:Class="Mossy.MossyBrowser"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-	xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:Mossy"
-	x:Name="MossyBrowserRoot"
+    x:Name="MossyBrowserRoot"
     mc:Ignorable="d"
 	d:DataContext="{d:DesignInstance Type=local:ViewModel, IsDesignTimeCreatable=False}"
 	d:DesignWidth="1600"
     d:DesignHeight="900">
 
-	<UserControl.Resources>
-		<local:VisibilityConverter x:Key="visibilityConverter"/>
-		<local:RenameVisibilityConverter x:Key="renameVisibilityConverter"/>
-	</UserControl.Resources>
-
-	<Grid>
+	<Grid Background="{StaticResource Brush-Background}">
 		<DockPanel>
-			<Menu DockPanel.Dock="top" Background="#404040" Foreground="{StaticResource Brush-Foreground}">
-				<MenuItem Header="_File" Background="#404040">
-					<MenuItem Header="_Add Project" Command="{Binding NewProjectCommand}" Background="#404040"/>
+
+			<!--Menu-->
+			<Menu DockPanel.Dock="Top">
+				<MenuItem Header="_File">
+					<MenuItem Header="Add _Project" Command="{Binding AddProjectCommand}"/>
+					<MenuItem Header="Add _Tag" Command="{Binding AddTagCommand}"/>
+					<Separator/>
+					<MenuItem Header="_Auto Open Last Database" IsCheckable="True" IsChecked="{Binding AutoOpenLastDatabase}"/>
 					<Separator/>
 					<MenuItem Header="_Close Database" Command="{Binding CloseDatabaseCommand}"/>
 					<MenuItem Header="_Exit" Command="{Binding ExitCommand}"/>
 				</MenuItem>
+				<MenuItem Header="_Edit">
+					<MenuItem Header="Delete _Project"
+							  Command="{Binding DeleteProjectCommand}" CommandParameter="{Binding SelectedProject}"
+							  IsEnabled="{Binding SelectedProject, Converter={StaticResource Conv-NotNull}}"/>
+					<MenuItem Header="Delete _Tag"
+							  Command="{Binding DeleteTagCommand}" CommandParameter="{Binding SelectedProject}"
+							  IsEnabled="{Binding SelectedTag, Converter={StaticResource Conv-NotNull}}"/>
+				</MenuItem>
 				<MenuItem Header="_About" Command="{Binding AboutCommand}"/>
 			</Menu>
 
-			<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
-				<Button
-					Width="400"
-					Height="40"
-					FontSize="22"
-					Margin="5"
-					Command="{Binding NewProjectCommand}">
-					<TextBlock Text="ADD PROJECT" FontFamily="{StaticResource Font-Sans}"/>
-				</Button>
-				<Button
-					Content="ADD TAG"
-					Width="400"
-					Height="40"
-					FontSize="22"
-					Margin="5"
-					Command="{Binding AddTagCommand}"/>
-
-				<TextBlock Text="TESTING" Foreground="White" FontSize="40" FontFamily="{DynamicResource Font-Sans}" FontWeight="Heavy" FontStyle="Italic"/>
-			</StackPanel>
-
+			<!--Main Content-->
 			<Grid>
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition MinWidth="200"/>
-					<ColumnDefinition MinWidth="200"/>
+					<ColumnDefinition Width="350"/>
+					<ColumnDefinition Width="1"/>
+					<ColumnDefinition Width="3*"/>
+					<ColumnDefinition Width="1"/>
+					<ColumnDefinition Width="2*"/>
 				</Grid.ColumnDefinitions>
 				<Grid.RowDefinitions>
-					<RowDefinition Height="*"/>
 					<RowDefinition Height="*"/>
 					<RowDefinition Height="Auto"/>
 				</Grid.RowDefinitions>
 
+
+				<!--Left Side Bar-->
+				<Grid Grid.Column="0" Margin="10">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="3*"/>
+						<RowDefinition Height="2*"/>
+					</Grid.RowDefinitions>
+
+					<Grid.Resources>
+						<Style TargetType="TextBlock" BasedOn="{StaticResource Style-LabelText}">
+							<Setter Property="Margin" Value="0,20,0,0"/>
+						</Style>
+						<Style TargetType="ListBox">
+							<Setter Property="Background" Value="Transparent"/>
+							<Setter Property="BorderBrush" Value="Transparent"/>
+							<Setter Property="IsSynchronizedWithCurrentItem" Value="True"/>
+							<Setter Property="ItemsControl.ItemTemplate">
+								<Setter.Value>
+									<DataTemplate>
+										<TextBlock Text="{Binding Name}"/>
+									</DataTemplate>
+								</Setter.Value>
+							</Setter>
+						</Style>
+						<Style TargetType="ListBoxItem">
+							<Setter Property="Template">
+								<Setter.Value>
+									<ControlTemplate TargetType="ListBoxItem">
+										<Border x:Name="Border" Padding="2" SnapsToDevicePixels="True" BorderThickness="1">
+											<Border.Background>
+												<SolidColorBrush Color="Transparent"/>
+											</Border.Background>
+											<Border.BorderBrush>
+												<SolidColorBrush Color="Transparent"/>
+											</Border.BorderBrush>
+											<VisualStateManager.VisualStateGroups>
+												<VisualStateGroup x:Name="CommonStates">
+													<VisualState x:Name="Normal"/>
+													<VisualState x:Name="MouseOver">
+														<Storyboard>
+															<ColorAnimationUsingKeyFrames
+																Storyboard.TargetName="Border"
+																Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)">
+																<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent}"/>
+															</ColorAnimationUsingKeyFrames>
+														</Storyboard>
+													</VisualState>
+													<VisualState x:Name="Disabled"/>
+												</VisualStateGroup>
+												<VisualStateGroup x:Name="SelectionStates">
+													<VisualState x:Name="Unselected"/>
+													<VisualState x:Name="Selected">
+														<Storyboard>
+															<ColorAnimationUsingKeyFrames
+																Storyboard.TargetName="Border"
+																Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+																<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent-Alpha25}"/>
+															</ColorAnimationUsingKeyFrames>
+														</Storyboard>
+													</VisualState>
+													<VisualState x:Name="SelectedUnfocused">
+														<Storyboard>
+															<ColorAnimationUsingKeyFrames
+																Storyboard.TargetName="Border"
+																Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+																<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent-Alpha25}"/>
+															</ColorAnimationUsingKeyFrames>
+														</Storyboard>
+													</VisualState>
+												</VisualStateGroup>
+											</VisualStateManager.VisualStateGroups>
+											<ContentPresenter/>
+										</Border>
+									</ControlTemplate>
+								</Setter.Value>
+							</Setter>
+						</Style>
+					</Grid.Resources>
+
+					<TextBox
+						Grid.Row="0"
+						x:Name="SearchTextBox"
+						Margin="0,5,0,0"
+						Text="{Binding SearchFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+					<TextBlock Grid.Row="0" Margin="7,10,0,0" Text="Search">
+						<TextBlock.Style>
+							<Style TargetType="TextBlock">
+								<Setter Property="Focusable" Value="False"/>
+								<Setter Property="IsHitTestVisible" Value="False"/>
+								<Setter Property="Foreground" Value="{StaticResource Brush-Disabled-Foreground}"/>
+								<Setter Property="FontFamily" Value="{StaticResource Font-Sans}"/>
+								<Setter Property="FontSize" Value="15"/>
+								<Setter Property="FontStyle" Value="Normal"/>
+								<Setter Property="FontWeight" Value="Light"/>
+								<Setter Property="Visibility" Value="Hidden"/>
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
+										<Setter Property="Visibility" Value="Visible"/>
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</TextBlock.Style>
+					</TextBlock>
+
+					<!--This trickery is to make sure that both lists stay in view,
+					but that there is no big gap when the lists only have a few items.
+					The Margin is a hacky way to take the label text size into account...-->
+					<Border x:Name="ProjectsScaleRef" Grid.Row="1" Margin="0,60,0,0" Background="Transparent"/>
+					<Border x:Name="TagsScaleRef" Grid.Row="2" Margin="0,60,0,0" Background="Transparent"/>
+
+					<StackPanel
+						Grid.Row="1"
+						Grid.RowSpan="99"
+						Margin="10">
+
+						<TextBlock
+							Text="PROJECTS"/>
+						<ListBox
+							MaxHeight="{Binding ActualHeight, ElementName=ProjectsScaleRef}"
+							ItemsSource="{Binding Projects.View}"
+							SelectedItem="{Binding SelectedProject}"/>
+
+						<TextBlock
+							Text="TAGS"/>
+						<ListBox
+							Grid.Row="2"
+							MaxHeight="{Binding ActualHeight, ElementName=TagsScaleRef}"
+							ItemsSource="{Binding Tags.View}"
+							SelectedItem="{Binding SelectedTag}"/>
+					</StackPanel>
+				</Grid>
+
+
+				<!--Divider-->
+				<Border Grid.Column="1" Background="{StaticResource Brush-Middleground-Border}" Margin="0,10,0,10"/>
+
+
+				<!--Project Inspector-->
 				<Border
-					Grid.Column="0"
-					Margin="23, 20"
-					CornerRadius="10"
-					Background="Gray">
-
-					<ListBox
-						Background="Transparent"
-						BorderBrush="Transparent"
-						ItemsSource="{Binding Database.Projects}"
-						SelectedItem="{Binding SelectedProject}"
-						IsSynchronizedWithCurrentItem="True">
-
-						<ItemsControl.ItemTemplate>
-							<DataTemplate>
-								<Border Background="DarkGoldenrod" Height="60" Margin="4">
-									<TextBlock
-										Text="{Binding Name}"
-										FontSize="28"
-										Foreground="Black"
-										Margin="4"/>
-
-									<Border.ContextMenu>
-										<ContextMenu>
-											<MenuItem
-													Header="Rename"
-													Command="{Binding DataContext.RenameProjectCommand, Source={x:Reference MossyBrowserRoot}}"
-													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
-											<Separator/>
-											<MenuItem
-													Header="Delete"
-													Foreground="Red"
-													Command="{Binding DataContext.DeleteProjectCommand, Source={x:Reference MossyBrowserRoot}}"
-													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
-										</ContextMenu>
-									</Border.ContextMenu>
-								</Border>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ListBox>
-				</Border>
-
-				<Border
-					Grid.Column="0"
-					Grid.Row="1"
-					Margin="23, 20"
-					CornerRadius="10"
-					Background="Gray">
-
-					<ListBox
-						Background="Transparent"
-						BorderBrush="Transparent"
-						ItemsSource="{Binding Database.Tags}"
-						SelectedItem="{Binding SelectedTag}"
-						IsSynchronizedWithCurrentItem="True">
-
-						<ItemsControl.ItemTemplate>
-							<DataTemplate>
-								<Border Background="DarkGoldenrod" Height="60" Margin="4">
-									<TextBlock
-										Text="{Binding Name}"
-										FontSize="28"
-										Foreground="Black"
-										Margin="4"/>
-
-									<Border.ContextMenu>
-										<ContextMenu>
-											<MenuItem
-													Header="Rename"
-													Command="{Binding DataContext.RenameTagCommand, Source={x:Reference MossyBrowserRoot}}"
-													CommandParameter="{Binding}"/>
-											<MenuItem
-													Header="Recategorize"
-													Command="{Binding DataContext.RecategorizeTagCommand, Source={x:Reference MossyBrowserRoot}}"
-													CommandParameter="{Binding}"/>
-											<Separator/>
-											<MenuItem
-													Header="Delete"
-													Foreground="Red"
-													Command="{Binding DataContext.DeleteTagCommand, Source={x:Reference MossyBrowserRoot}}"
-													CommandParameter="{Binding}"/>
-										</ContextMenu>
-									</Border.ContextMenu>
-								</Border>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ListBox>
-				</Border>
-
-				<GridSplitter
-					Grid.RowSpan="2"
-					Background="CadetBlue"
-					Width="3"/>
-
-				<Border
-					Grid.Column="1"
-					Grid.RowSpan="2"
+					Grid.Column="2"
 					x:Name="ProjectBorder"
-					Background="DimGray"
-					BorderThickness="2"
-					CornerRadius="10"
-					Margin="20"
 					DragOver="Project_DragOver"
 					Drop="Project_Drop"
 					PreviewDragEnter="Project_PreviewDragEnter"
@@ -218,7 +248,7 @@
 					</Border.Triggers>
 
 					<StackPanel
-						Visibility="{Binding SelectedProject, Converter={StaticResource visibilityConverter}}"
+						Visibility="{Binding SelectedProject, Converter={StaticResource Conv-Visibility}}"
 						Orientation="Vertical"
 						HorizontalAlignment="Center"
 						VerticalAlignment="Center">
@@ -263,7 +293,7 @@
 									<Button
 										Background="Beige"
 										Content="{Binding Name}"
-										Command="{Binding DataContext.RemoveProjectTagCommand, Source={x:Reference MossyBrowserRoot}}"
+										Command="{Binding DataContext.DeleteProjectTagCommand, Source={x:Reference MossyBrowserRoot}}"
 										CommandParameter="{Binding}"/>
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
@@ -305,8 +335,8 @@
 												<!--doDoubleClick-->
 												<MenuItem
 													Header="Rename"
-													Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource renameVisibilityConverter}}"
-													Command="{Binding DataContext.RenameDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
+													Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource Conv-RenameVisibility}}"
+													Command="{Binding DataContext.SetDocumentNameCommand, Source={x:Reference MossyBrowserRoot}}"
 													CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
 												<MenuItem Header="Add To Queue" IsEnabled="False"/>
 												<MenuItem Header="Set As Cover" IsEnabled="False"/>
@@ -325,30 +355,107 @@
 					</StackPanel>
 				</Border>
 
-				<StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
 
-					<TextBlock Foreground="White"
-						Text="{Binding MediaPlayer.Position, StringFormat={}{0:mm\\:ss}}"/>
-					<TextBlock Foreground="White" Text=" / "/>
-					<TextBlock Foreground="White"
-						Text="{Binding MediaPlayer.Duration, StringFormat={}{0:mm\\:ss}}"/>
+				<!--Tag Inspector-->
+				<Border Grid.Column="2" Visibility="Collapsed">
+					<TextBlock Text="TODO TAG INSPECTOR" Foreground="{StaticResource Brush-Foreground}"/>
+				</Border>
 
-					<Button Width="80" Height="80"
-							IsEnabled="{Binding MediaPlayer.IsLoaded}"
-							Command="{Binding MediaPlayer.PauseResumeCommand}">
-						<Button.Style>
-							<Style TargetType="Button">
-								<Setter Property="Content" Value="PLAY"/>
-								<Style.Triggers>
-									<DataTrigger Binding="{Binding MediaPlayer.IsPlaying}" Value="{StaticResource True}">
-										<Setter Property="Content" Value="PAUSE"/>
-									</DataTrigger>
-								</Style.Triggers>
-							</Style>
-						</Button.Style>
+
+				<!--Divider-->
+				<Border Grid.Column="3" Background="{StaticResource Brush-Middleground-Border}" Margin="0,10,0,10"/>
+
+
+				<!--Document Inspector-->
+				<Border Grid.Column="4">
+					<TextBlock Text="TODO DOC INSPECTOR" Foreground="{StaticResource Brush-Foreground}"/>
+				</Border>
+
+
+				<!--Playlist-->
+				<Border Grid.Column="4">
+					<TextBlock Text="TODO PLAYLIST" Foreground="{StaticResource Brush-Foreground}"/>
+				</Border>
+
+
+				<!--Media Player Controls-->
+				<Grid
+					Grid.Row="2" Grid.ColumnSpan="99"
+					Background="{StaticResource Brush-Middleground}">
+
+					<StackPanel
+						Orientation="Horizontal"
+						HorizontalAlignment="Center">
+
+						<Button IsEnabled="{Binding MediaPlayer.IsLoaded}"
+								Command="{Binding MediaPlayer.PauseResumeCommand}"
+								Margin="4">
+							<TextBlock Text="PREV"/>
+						</Button>
+
+						<Button IsEnabled="{Binding MediaPlayer.IsLoaded}"
+								Command="{Binding MediaPlayer.PauseResumeCommand}"
+								Margin="4">
+							<TextBlock Text="PLAY"/>
+						</Button>
+
+						<Button IsEnabled="{Binding MediaPlayer.IsLoaded}"
+								Command="{Binding MediaPlayer.PauseResumeCommand}"
+								Margin="4">
+							<TextBlock Text="NEXT"/>
+						</Button>
+
+						<Rectangle Fill="Green" Width="25" Height="25"/>
+
+						<ProgressBar
+							Height="10"
+							Width="80"
+							Margin="10"
+							Value="50"
+							VerticalAlignment="Center"
+							Foreground="{StaticResource Brush-Foreground}"
+							Background="{StaticResource Brush-Background}"/>
+
+						<Separator Opacity="0" Width="100"/>
+
+						<TextBlock
+							VerticalAlignment="Center"
+							Foreground="{StaticResource Brush-Foreground}"
+							Text="{Binding MediaPlayer.Position, StringFormat={}{0:mm\\:ss}, FallbackValue=0:00}"/>
+
+						<ProgressBar
+							Height="10"
+							Width="500"
+							Margin="10"
+							Value="50"
+							VerticalAlignment="Center"
+							Foreground="{StaticResource Brush-Accent}"
+							Background="{StaticResource Brush-Background}"/>
+
+						<TextBlock
+							VerticalAlignment="Center"
+							Foreground="{StaticResource Brush-Foreground}"
+							Text="{Binding MediaPlayer.Duration, StringFormat={}{0:mm\\:ss}, FallbackValue=0:00}"/>
+
+						<Separator Opacity="0" Width="100"/>
+
+						<Rectangle Fill="Yellow" Width="40" Height="40" Margin="8"/>
+
+						<StackPanel VerticalAlignment="Center">
+							<TextBlock Text="document title"/>
+							<TextBlock Text="project title"/>
+						</StackPanel>
+
+					</StackPanel>
+
+					<Button IsEnabled="{Binding MediaPlayer.IsLoaded}"
+							Command="{Binding MediaPlayer.PauseResumeCommand}"
+							HorizontalAlignment="Right"
+							Margin="4">
+						<TextBlock Text="LIST"/>
 					</Button>
 
-				</StackPanel>
+				</Grid>
 			</Grid>
 		</DockPanel>
 	</Grid>

@@ -12,13 +12,18 @@
 		<s:Boolean x:Key="False">False</s:Boolean>
 
 
+		<!--Converters-->
+		<local:VisibilityConverter x:Key="Conv-Visibility"/>
+		<local:RenameVisibilityConverter x:Key="Conv-RenameVisibility"/>
+		<local:NotNullConverter x:Key="Conv-NotNull"/>
+
+
 		<!--Fonts-->
 		<FontFamily x:Key="Font-Mono">pack//application:,,,/Assets/Fonts/#Roboto Mono</FontFamily>
 		<FontFamily x:Key="Font-Sans">pack//application:,,,/Assets/Fonts/#Plus Jakarta Sans</FontFamily>
 
 
 		<!--Color Palette-->
-		<Color x:Key="Color-Transparent">#00000000</Color>
 		<Color x:Key="Color-Accent">#A4BB2F</Color>
 		<Color x:Key="Color-Accent-Alpha10">#1AA4BB2F</Color>
 		<Color x:Key="Color-Accent-Alpha25">#40A4BB2F</Color>
@@ -29,17 +34,21 @@
 		<Color x:Key="Color-Background">#222223</Color>
 		<Color x:Key="Color-Middleground">#303031</Color>
 		<Color x:Key="Color-Middleground-Border">#404041</Color>
-		<Color x:Key="Color-Foreground">#F0F0F0</Color>
-		<Color x:Key="Color-Disabled-Foreground">#909090</Color>
+		<Color x:Key="Color-Foreground">#F0F0F1</Color>
+		<Color x:Key="Color-Label">#C0C0C1</Color>
+		<Color x:Key="Color-Disabled-Foreground">#909091</Color>
 		<Color x:Key="Color-Disabled-Middleground">#606061</Color>
 		<SolidColorBrush x:Key="Brush-Background" Color="{StaticResource Color-Background}"/>
 		<SolidColorBrush x:Key="Brush-Middleground" Color="{StaticResource Color-Middleground}"/>
+		<SolidColorBrush x:Key="Brush-Middleground-Border" Color="{StaticResource Color-Middleground-Border}"/>
 		<SolidColorBrush x:Key="Brush-Foreground" Color="{StaticResource Color-Foreground}"/>
+		<SolidColorBrush x:Key="Brush-Label" Color="{StaticResource Color-Label}"/>
 		<SolidColorBrush x:Key="Brush-Accent" Color="{StaticResource Color-Accent}"/>
 		<SolidColorBrush x:Key="Brush-Accent-Alpha10" Color="{StaticResource Color-Accent-Alpha10}"/>
 		<SolidColorBrush x:Key="Brush-Accent-Alpha25" Color="{StaticResource Color-Accent-Alpha25}"/>
 		<SolidColorBrush x:Key="Brush-Accent-Alpha50" Color="{StaticResource Color-Accent-Alpha50}"/>
 		<SolidColorBrush x:Key="Brush-Accent-Alpha75" Color="{StaticResource Color-Accent-Alpha75}"/>
+		<SolidColorBrush x:Key="Brush-Disabled-Foreground" Color="{StaticResource Color-Disabled-Foreground}"/>
 
 
 		<!--Logo-->
@@ -71,6 +80,7 @@
 			<Setter Property="FontStyle" Value="Normal"/>
 			<Setter Property="FontWeight" Value="Regular"/>
 		</Style>
+		<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}"/>
 
 		<Style x:Key="Style-Hyperlink" TargetType="Hyperlink">
 			<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
@@ -78,6 +88,15 @@
 			<Setter Property="FontSize" Value="14"/>
 			<Setter Property="FontStyle" Value="Normal"/>
 			<Setter Property="FontWeight" Value="Regular"/>
+		</Style>
+		<Style TargetType="Hyperlink" BasedOn="{StaticResource Style-Hyperlink}"/>
+
+		<Style x:Key="Style-LabelText" TargetType="TextBlock">
+			<Setter Property="Foreground" Value="{StaticResource Brush-Label}"/>
+			<Setter Property="FontFamily" Value="{StaticResource Font-Sans}"/>
+			<Setter Property="FontSize" Value="16"/>
+			<Setter Property="FontStyle" Value="Normal"/>
+			<Setter Property="FontWeight" Value="Light"/>
 		</Style>
 
 
@@ -203,6 +222,7 @@
 				</Setter.Value>
 			</Setter>
 		</Style>
+		<Style TargetType="Button" BasedOn="{StaticResource Style-Button-Base}"/>
 
 
 		<!--Menu-->
@@ -215,6 +235,7 @@
 			<Setter Property="FontStyle" Value="Normal"/>
 			<Setter Property="FontWeight" Value="Light"/>
 		</Style>
+		<Style TargetType="Menu" BasedOn="{StaticResource Style-Menu}"/>
 
 		<SolidColorBrush x:Key="Menu.Static.Background" Color="{StaticResource Color-Middleground}"/>
 		<SolidColorBrush x:Key="Menu.Static.Border" Color="{StaticResource Color-Middleground-Border}"/>
@@ -225,8 +246,8 @@
 		<SolidColorBrush x:Key="MenuItem.Selected.Border" Color="{StaticResource Color-Accent}"/>
 		<SolidColorBrush x:Key="MenuItem.Highlight.Background" Color="{StaticResource Color-Accent-Alpha10}"/>
 		<SolidColorBrush x:Key="MenuItem.Highlight.Border" Color="{StaticResource Color-Accent}"/>
-		<SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Background" Color="{StaticResource Color-Transparent}"/>
-		<SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Border" Color="{StaticResource Color-Transparent}"/>
+		<SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Background" Color="Transparent"/>
+		<SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Border" Color="{StaticResource Color-Disabled-Middleground}"/>
 		<MenuScrollingVisibilityConverter x:Key="MenuScrollingVisibilityConverter"/>
 		<Geometry x:Key="DownArrow">M 0,0 L 3.5,4 L 7,0 Z</Geometry>
 		<Geometry x:Key="UpArrow">M 0,4 L 3.5,0 L 7,4 Z</Geometry>
@@ -507,6 +528,204 @@
 				</Trigger>
 				<Trigger Property="Role" Value="SubmenuHeader">
 					<Setter Property="Template" Value="{DynamicResource {ComponentResourceKey ResourceId=SubmenuHeaderTemplateKey, TypeInTargetAssembly={x:Type MenuItem}}}"/>
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+
+
+		<!--ContextMenu-->
+		<Style x:Key="Style-ContextMenu" TargetType="{x:Type ContextMenu}">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Setter Property="Grid.IsSharedSizeScope" Value="true"/>
+			<Setter Property="HasDropShadow" Value="True"/>
+			<Setter Property="Foreground" Value="{StaticResource Brush-Foreground}"/>
+			<Setter Property="FontFamily" Value="{StaticResource Font-Sans}"/>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="FontStyle" Value="Normal"/>
+			<Setter Property="FontWeight" Value="Light"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="{x:Type ContextMenu}">
+						<Border x:Name="Border" Background="{StaticResource Brush-Middleground}" BorderThickness="1">
+							<Border.BorderBrush>
+								<SolidColorBrush Color="{StaticResource Color-Middleground-Border}"/>
+							</Border.BorderBrush>
+							<StackPanel
+								IsItemsHost="True"
+								KeyboardNavigation.DirectionalNavigation="Cycle"/>
+						</Border>
+						<ControlTemplate.Triggers>
+							<Trigger Property="HasDropShadow" Value="true">
+								<Setter TargetName="Border" Property="Padding" Value="0,3,0,3" />
+								<Setter TargetName="Border" Property="CornerRadius" Value="4" />
+							</Trigger>
+						</ControlTemplate.Triggers>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<Style TargetType="ContextMenu" BasedOn="{StaticResource Style-ContextMenu}"/>
+
+
+		<!--TextBox-->
+		<Style TargetType="{x:Type TextBox}">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Setter Property="KeyboardNavigation.TabNavigation" Value="None"/>
+			<Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+			<Setter Property="AllowDrop" Value="True"/>
+			<Setter Property="SelectionBrush" Value="{StaticResource Brush-Foreground}"/>
+			<Setter Property="CaretBrush" Value="{StaticResource Brush-Foreground}"/>
+			<Setter Property="Foreground" Value="{StaticResource Brush-Foreground}"/>
+			<Setter Property="FontFamily" Value="{StaticResource Font-Sans}"/>
+			<Setter Property="FontSize" Value="15"/>
+			<Setter Property="FontStyle" Value="Normal"/>
+			<Setter Property="FontWeight" Value="Light"/>
+			<Setter Property="ContextMenu">
+				<Setter.Value>
+					<ContextMenu>
+						<MenuItem Command="ApplicationCommands.Copy"/>
+						<MenuItem Command="ApplicationCommands.Cut"/>
+						<MenuItem Command="ApplicationCommands.Paste"/>
+					</ContextMenu>
+				</Setter.Value>
+			</Setter>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="{x:Type TextBoxBase}">
+						<Border Name="Border" CornerRadius="8" Padding="2" BorderThickness="1">
+							<Border.Background>
+								<SolidColorBrush Color="{StaticResource Color-Middleground}"/>
+							</Border.Background>
+							<Border.BorderBrush>
+								<SolidColorBrush Color="{StaticResource Color-Middleground-Border}"/>
+							</Border.BorderBrush>
+							<VisualStateManager.VisualStateGroups>
+								<VisualStateGroup x:Name="CommonStates">
+									<VisualState x:Name="Normal"/>
+									<VisualState x:Name="Disabled">
+										<Storyboard>
+											<ColorAnimationUsingKeyFrames
+												Storyboard.TargetName="Border"
+												Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+												<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Disabled-Middleground}"/>
+											</ColorAnimationUsingKeyFrames>
+										</Storyboard>
+									</VisualState>
+									<VisualState x:Name="ReadOnly">
+										<Storyboard>
+											<ColorAnimationUsingKeyFrames
+												Storyboard.TargetName="Border"
+												Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+												<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Disabled-Middleground}"/>
+											</ColorAnimationUsingKeyFrames>
+										</Storyboard>
+									</VisualState>
+									<VisualState x:Name="MouseOver"/>
+								</VisualStateGroup>
+							</VisualStateManager.VisualStateGroups>
+							<ScrollViewer
+								Margin="2"
+								x:Name="PART_ContentHost"/>
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+
+
+		<!--ScrollBar-->
+		<Style x:Key="ScrollBarPageButton" TargetType="{x:Type RepeatButton}">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Setter Property="IsTabStop" Value="False"/>
+			<Setter Property="Focusable" Value="False"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="{x:Type RepeatButton}">
+						<Border Background="Transparent"/>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<Style x:Key="ScrollBarThumb" TargetType="{x:Type Thumb}">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Setter Property="IsTabStop" Value="False"/>
+			<Setter Property="Focusable" Value="False"/>
+			<Setter Property="BorderBrush" Value="{StaticResource Brush-Middleground}"/>
+			<Setter Property="Background" Value="{StaticResource Brush-Middleground}"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="{x:Type Thumb}">
+						<Border x:Name="Border" CornerRadius="2">
+							<Border.Background>
+								<SolidColorBrush Color="{StaticResource Color-Middleground}"/>
+							</Border.Background>
+							<VisualStateManager.VisualStateGroups>
+								<VisualStateGroup x:Name="CommonStates">
+									<VisualState x:Name="Normal"/>
+									<VisualState x:Name="MouseOver">
+										<Storyboard>
+											<ColorAnimationUsingKeyFrames
+												Storyboard.TargetName="Border"
+												Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+												<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Middleground-Border}"/>
+											</ColorAnimationUsingKeyFrames>
+										</Storyboard>
+									</VisualState>
+									<VisualState x:Name="Disabled"/>
+								</VisualStateGroup>
+							</VisualStateManager.VisualStateGroups>
+						</Border>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<ControlTemplate x:Key="VerticalScrollBar" TargetType="{x:Type ScrollBar}">
+			<Border>
+				<Track x:Name="PART_Track" IsDirectionReversed="True">
+					<Track.DecreaseRepeatButton>
+						<RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageUpCommand"/>
+					</Track.DecreaseRepeatButton>
+					<Track.Thumb>
+						<Thumb Style="{StaticResource ScrollBarThumb}" Margin="1,0,1,0"/>
+					</Track.Thumb>
+					<Track.IncreaseRepeatButton>
+						<RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageDownCommand"/>
+					</Track.IncreaseRepeatButton>
+				</Track>
+			</Border>
+		</ControlTemplate>
+		<ControlTemplate x:Key="HorizontalScrollBar" TargetType="{x:Type ScrollBar}">
+			<Border>
+				<Track x:Name="PART_Track" IsDirectionReversed="False">
+					<Track.DecreaseRepeatButton>
+						<RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageLeftCommand"/>
+					</Track.DecreaseRepeatButton>
+					<Track.Thumb>
+						<Thumb Style="{StaticResource ScrollBarThumb}" Margin="0,1,0,1"/>
+					</Track.Thumb>
+					<Track.IncreaseRepeatButton>
+						<RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageRightCommand"/>
+					</Track.IncreaseRepeatButton>
+				</Track>
+			</Border>
+		</ControlTemplate>
+		<Style x:Key="{x:Type ScrollBar}" TargetType="{x:Type ScrollBar}">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Style.Triggers>
+				<Trigger Property="Orientation" Value="Horizontal">
+					<Setter Property="Width" Value="Auto"/>
+					<Setter Property="Height" Value="8"/>
+					<Setter Property="Template" Value="{StaticResource HorizontalScrollBar}"/>
+				</Trigger>
+				<Trigger Property="Orientation" Value="Vertical">
+					<Setter Property="Width" Value="8"/>
+					<Setter Property="Height" Value="Auto"/>
+					<Setter Property="Template" Value="{StaticResource VerticalScrollBar}"/>
 				</Trigger>
 			</Style.Triggers>
 		</Style>
