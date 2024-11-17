@@ -10,12 +10,15 @@
 		<!--System-->
 		<s:Boolean x:Key="True">True</s:Boolean>
 		<s:Boolean x:Key="False">False</s:Boolean>
+		<Visibility x:Key="Hidden">Hidden</Visibility>
 
 
 		<!--Converters-->
 		<local:VisibilityConverter x:Key="Conv-Visibility"/>
 		<local:RenameVisibilityConverter x:Key="Conv-RenameVisibility"/>
 		<local:NotNullConverter x:Key="Conv-NotNull"/>
+		<local:IsNotLastItemVisibilityConverter x:Key="Conv-IsNotLastItemVisibility"/>
+		<local:DocumentPathImageConverter x:Key="Conv-DocumentPathImage"/>
 
 
 		<!--Fonts-->
@@ -32,6 +35,7 @@
 		<Color x:Key="Color-Accent-Tetradic-1">#2FBB8C</Color>
 		<Color x:Key="Color-Accent-Tetradic-3">#BB2F5E</Color>
 		<Color x:Key="Color-Background">#222223</Color>
+		<Color x:Key="Color-Background-Alpha50">#80222223</Color>
 		<Color x:Key="Color-Middleground">#303031</Color>
 		<Color x:Key="Color-Middleground-Border">#404041</Color>
 		<Color x:Key="Color-Foreground">#F0F0F1</Color>
@@ -39,6 +43,7 @@
 		<Color x:Key="Color-Disabled-Foreground">#909091</Color>
 		<Color x:Key="Color-Disabled-Middleground">#606061</Color>
 		<SolidColorBrush x:Key="Brush-Background" Color="{StaticResource Color-Background}"/>
+		<SolidColorBrush x:Key="Brush-Background-Alpha50" Color="{StaticResource Color-Background-Alpha50}"/>
 		<SolidColorBrush x:Key="Brush-Middleground" Color="{StaticResource Color-Middleground}"/>
 		<SolidColorBrush x:Key="Brush-Middleground-Border" Color="{StaticResource Color-Middleground-Border}"/>
 		<SolidColorBrush x:Key="Brush-Foreground" Color="{StaticResource Color-Foreground}"/>
@@ -49,6 +54,7 @@
 		<SolidColorBrush x:Key="Brush-Accent-Alpha50" Color="{StaticResource Color-Accent-Alpha50}"/>
 		<SolidColorBrush x:Key="Brush-Accent-Alpha75" Color="{StaticResource Color-Accent-Alpha75}"/>
 		<SolidColorBrush x:Key="Brush-Disabled-Foreground" Color="{StaticResource Color-Disabled-Foreground}"/>
+		<SolidColorBrush x:Key="Brush-Disabled-Middleground" Color="{StaticResource Color-Disabled-Middleground}"/>
 
 
 		<!--Logo-->
@@ -70,6 +76,30 @@
 			<GradientStop Offset="0" Color="{StaticResource Color-Accent-Tetradic-1}"/>
 			<GradientStop Offset="0.6" Color="{StaticResource Color-Accent}"/>
 		</LinearGradientBrush>
+
+
+		<!--Icons-->
+		<Geometry x:Key="Geometry-DocType-File">
+			M54.173,17.648L40.042,2.947L10.648,2.947L10.648,61.373L54.173,61.373L54.173,17.648ZM46.885,20.897L46.885,53.639C46.885,53.639 17.936,53.639
+			17.936,53.639C17.936,53.639 17.936,10.681 17.936,10.681C17.936,10.681 37.065,10.681 37.065,10.681L46.885,20.897Z
+		</Geometry>
+		<Geometry x:Key="Geometry-DocType-Link">
+			M74.36,43.841C72.991,21.426 78.972,8.84 93.963,8.303L109.632,7.824L109.632,-13.22L136.598,
+			19.155L109.632,51.531L109.632,30.487L85.751,30.487C78.74,30.758 74.986,35.266 74.36,43.841Z
+		</Geometry>
+		<Geometry x:Key="Geometry-DocType-Url">
+			M38.329,25.277C32.433,19.382 22.861,19.382 16.966,25.277C16.966,25.277 5.168,37.075 5.168,37.075C-0.727,42.97
+			-0.727,52.543 5.168,58.438C11.063,64.333 20.635,64.333 26.53,58.438C26.53,58.438 26.179,58.789 40.951
+			,44.017C36.816,45.263 33.15,45.267 29.451,43.732C20.322,52.861 20.638,52.545 20.638,52.545C17.995,55.188
+			13.703,55.188 11.06,52.545C8.418,49.902 8.418,45.611 11.06,42.968C11.06,42.968 22.859,31.17 22.859,
+			31.17C25.502,28.527 29.793,28.527 32.436,31.17C34.062,32.796 36.702,32.796 38.329,31.17C39.955,29.544
+			39.955,26.903 38.329,25.277ZM25.215,38.391C31.11,44.286 40.682,44.286 46.577,38.391C46.577,38.391
+			58.376,26.592 58.376,26.592C64.271,20.697 64.271,11.125 58.376,5.23C52.481,-0.665 42.908,-0.665
+			37.013,5.23C37.013,5.23 37.364,4.879 22.592,19.651C26.727,18.405 30.394,18.401 34.092,19.936C43.222,10.806
+			42.906,11.123 42.906,11.123C45.549,8.48 49.84,8.48 52.483,11.123C55.126,13.766 55.126,18.057
+			52.483,20.7C52.483,20.7 40.685,32.498 40.685,32.498C38.042,35.141 33.751,35.141 31.108,32.498C29.481,30.872
+			26.841,30.872 25.215,32.498C23.589,34.124 23.589,36.765 25.215,38.391Z
+		</Geometry>
 
 
 		<!--Text-->

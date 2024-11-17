@@ -229,12 +229,22 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				var altNamesOrd = reader.GetOrdinal("alt_names");
 				if (!reader.IsDBNull(altNamesOrd))
 				{
-					var altNames = reader.GetString(altNamesOrd);
+					string altNames = reader.GetString(altNamesOrd);
 					var altNamesArray = altNames.Split(altNamesSeparator);
 					foreach (var altName in altNamesArray)
 					{
 						project.AltNames.Add(altName);
 					}
+				}
+
+				var coverDocIdOrd = reader.GetOrdinal("cover_document_id");
+				if (!reader.IsDBNull(coverDocIdOrd))
+				{
+					project.CoverDocument = new MossyDocument
+					{
+						DocumentId = reader.GetInt64(coverDocIdOrd)
+					};
+					// CoverDocument will be replaced later when documents are loaded.
 				}
 
 				var dateCreatedOrd = reader.GetOrdinal("date_created");
@@ -275,6 +285,16 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 				var categoryOrd = reader.GetOrdinal("category");
 				Debug.Assert(!reader.IsDBNull(categoryOrd));
 				tag.Category = reader.GetString(categoryOrd);
+
+				var coverDocIdOrd = reader.GetOrdinal("cover_document_id");
+				if (!reader.IsDBNull(coverDocIdOrd))
+				{
+					tag.CoverDocument = new MossyDocument
+					{
+						DocumentId = reader.GetInt64(coverDocIdOrd)
+					};
+					// CoverDocument will be replaced later when documents are loaded.
+				}
 
 				var dateCreatedOrd = reader.GetOrdinal("date_created");
 				Debug.Assert(!reader.IsDBNull(dateCreatedOrd));
@@ -385,6 +405,11 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 						tag.Documents.Add(document);
 						Debug.Assert(!reader2.Read());
+
+						if (tag.CoverDocument != null && tag.CoverDocument.DocumentId == documentId)
+						{
+							tag.CoverDocument = document;
+						}
 					}
 					catch (Exception e)
 					{
@@ -452,6 +477,11 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 						project.Documents.Add(document);
 						Debug.Assert(!reader2.Read());
+
+						if (project.CoverDocument != null && project.CoverDocument.DocumentId == documentId)
+						{
+							project.CoverDocument = document;
+						}
 					}
 					catch (Exception e)
 					{
@@ -469,7 +499,21 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 		if (true)
 		{
-			// TODO: Validate
+			// Validate
+			foreach (MossyProject project in Projects)
+			{
+				if (project.CoverDocument != null)
+				{
+					Debug.Assert(!string.IsNullOrEmpty(project.CoverDocument.Path.RawPath));
+				}
+			}
+			foreach (MossyTag tag in Tags)
+			{
+				if (tag.CoverDocument != null)
+				{
+					Debug.Assert(!string.IsNullOrEmpty(tag.CoverDocument.Path.RawPath));
+				}
+			}
 		}
 
 		OnDatabaseLoaded();
@@ -688,7 +732,7 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 		catch (SqliteException e)
 		{
-			MessageBox.Show(e.Message, "Failed to rename project!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Failed to set project name!", MessageBoxButton.OK);
 			transaction.Rollback();
 			return false;
 		}
@@ -981,6 +1025,60 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
+	public bool SetProjectCoverDocument(MossyProject project, MossyDocument document)
+	{
+		if (!project.Documents.Contains(document))
+		{
+			MessageBox.Show(
+				$"Document (id={document.DocumentId}) not found in project.",
+				"Failed to set project cover document!", MessageBoxButton.OK);
+			return false;
+		}
+		if (project.CoverDocument == document)
+		{
+			return true;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var command = connection.CreateCommand();
+
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET cover_document_id = $doc
+			WHERE project_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$doc", document.DocumentId.Value);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to set project cover document!", MessageBoxButton.OK);
+			return false;
+		}
+
+		project.CoverDocument = document;
+
+		return true;
+	}
+
 
 	public bool AddTag(string name, string category)
 	{
@@ -1255,11 +1353,63 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 		catch (SqliteException e)
 		{
-			MessageBox.Show(e.Message, "Failed to recategorize tag!", MessageBoxButton.OK);
+			MessageBox.Show(e.Message, "Failed to set tag category!", MessageBoxButton.OK);
 			return false;
 		}
 
 		tag.Category = newCategory;
+		return true;
+	}
+
+	public bool SetTagCoverDocument(MossyTag tag, MossyDocument document)
+	{
+		if (!tag.Documents.Contains(document))
+		{
+			MessageBox.Show(
+				$"Document (id={document.DocumentId}) not found in Tag!",
+				"Failed to set tag cover document!", MessageBoxButton.OK);
+			return false;
+		}
+		if (tag.CoverDocument == document)
+		{
+			return true;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE tags
+			SET cover_document_id = $doc
+			WHERE tag_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$doc", document.DocumentId.Value);
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to set tag cover document!", MessageBoxButton.OK);
+			return false;
+		}
+
+		tag.CoverDocument = document;
 		return true;
 	}
 
@@ -1744,9 +1894,34 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 
+		if (project.CoverDocument == document)
+		{
+			command.CommandText =
+			@"
+				UPDATE projects
+				SET cover_document_id = NULL
+				WHERE project_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+			try
+			{
+				var result = command.ExecuteNonQuery();
+				Debug.Assert(result == 1);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to delete project cover document!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+
 		if (true)
 		{
-			// Sanity check, document should only be in a project of a tag.
+			// Validate: Document should only be in a project of a tag.
 			command.CommandText =
 			@"
 				SELECT COUNT(*)
@@ -1789,6 +1964,10 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 		transaction.Commit();
 
+		if (project.CoverDocument == document)
+		{
+			project.CoverDocument = null;
+		}
 		var removed = project.Documents.Remove(document);
 		Debug.Assert(removed);
 
@@ -1862,6 +2041,31 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 
+		if (tag.CoverDocument == document)
+		{
+			command.CommandText =
+			@"
+				UPDATE tags
+				SET cover_document_id = NULL
+				WHERE tag_id = $id;
+			";
+			command.Parameters.Clear();
+			command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+			try
+			{
+				var result = command.ExecuteNonQuery();
+				Debug.Assert(result == 1);
+			}
+			catch (SqliteException e)
+			{
+				MessageBox.Show(e.Message, "Failed to delete tag cover document!", MessageBoxButton.OK);
+				transaction.Rollback();
+				return false;
+			}
+		}
+
+
 		if (true)
 		{
 			// Sanity check, document should only be in a project of a tag.
@@ -1907,6 +2111,10 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 
 		transaction.Commit();
 
+		if (tag.CoverDocument == document)
+		{
+			tag.CoverDocument = null;
+		}
 		var removed = tag.Documents.Remove(document);
 		Debug.Assert(removed);
 

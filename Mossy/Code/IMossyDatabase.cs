@@ -20,6 +20,8 @@ internal class MossyDocumentPath
 		Type = MossyDocumentPathType.Unknown;
 		Path = "";
 		RawPath = "";
+		DisplayPath = "";
+		UpdateDisplayPath();
 	}
 
 	public MossyDocumentPath(MossyDocumentPathType type, string path)
@@ -27,6 +29,7 @@ internal class MossyDocumentPath
 		Type = type;
 		Path = path;
 		RawPath = Type.ToString() + separator + Path;
+		UpdateDisplayPath();
 	}
 
 	public MossyDocumentPath(string rawPath)
@@ -38,6 +41,7 @@ internal class MossyDocumentPath
 			Debug.Assert(false, "MossyDocumentPath: Unable to parse path!");
 			Path = rawPath;
 			Type = MossyDocumentPathType.Unknown;
+			UpdateDisplayPath();
 			return;
 		}
 
@@ -51,12 +55,67 @@ internal class MossyDocumentPath
 			Debug.Assert(false, "MossyDocumentPath: Unable to parse type!");
 			Type = MossyDocumentPathType.Unknown;
 		}
+		UpdateDisplayPath();
+	}
+
+	private void UpdateDisplayPath()
+	{
+		switch (Type)
+		{
+			default:
+			case MossyDocumentPathType.Unknown:
+				DisplayPath = Path;
+				break;
+
+			case MossyDocumentPathType.File:
+			{
+				string? fileName = System.IO.Path.GetFileName(Path);
+				Debug.Assert(fileName != null);
+				DisplayPath = fileName ?? Path;
+				break;
+			}
+
+			case MossyDocumentPathType.Link:
+			{
+				string? fileName = System.IO.Path.GetFileName(Path);
+				string? pathDir = System.IO.Path.GetDirectoryName(Path);
+				Debug.Assert(fileName != null);
+				Debug.Assert(pathDir != null);
+				if (fileName != null && pathDir != null)
+				{
+					string dirName = new System.IO.DirectoryInfo(pathDir).Name;
+					Debug.Assert(!string.IsNullOrEmpty(dirName));
+					DisplayPath = System.IO.Path.Join(dirName, fileName);
+				}
+				else
+				{
+					DisplayPath = fileName ?? Path;
+				}
+				break;
+			}
+
+			case MossyDocumentPathType.Url:
+			{
+				DisplayPath = Path;
+				if (DisplayPath.StartsWith("http://"))
+				{
+					DisplayPath = DisplayPath.Substring("http://".Length);
+				}
+				if (DisplayPath.StartsWith("https://"))
+				{
+					DisplayPath = DisplayPath.Substring("https://".Length);
+				}
+				DisplayPath = DisplayPath.Split('/', 2)[0];
+				break;
+			}
+		}
 	}
 
 	private const char separator = ':';
-	public string					RawPath	{ get; private set; }
-	public MossyDocumentPathType	Type	{ get; private set; }
-	public string					Path	{ get; private set; }
+	public string					RawPath		{ get; private set; }
+	public MossyDocumentPathType	Type		{ get; private set; }
+	public string					Path		{ get; private set; }
+	public string					DisplayPath	{ get; private set; } = "";
 }
 
 [Flags] internal enum DocumentFlags : UInt64
@@ -138,6 +197,7 @@ internal class MossyTag : NotifyPropertyChangedBase
 	private TagID tagId;
 	private string name = "";
 	private string category = "";
+	private MossyDocument? coverDocument;
 	private Color color;
 	private TagFlags flags;
 	private DateTime dateCreated;
@@ -158,6 +218,12 @@ internal class MossyTag : NotifyPropertyChangedBase
 	{
 		get => category;
 		set { category = value; OnPropertyChanged(); }
+	}
+
+	public MossyDocument? CoverDocument
+	{
+		get => coverDocument;
+		set { coverDocument = value; OnPropertyChanged(); }
 	}
 
 	public Color Color
@@ -186,6 +252,7 @@ internal class MossyProject : NotifyPropertyChangedBase
 {
 	private ProjectID projectId;
 	private string name = "";
+	private MossyDocument? coverDocument;
 	private ProjectFlags flags;
 	private DateTime dateCreated;
 
@@ -199,6 +266,12 @@ internal class MossyProject : NotifyPropertyChangedBase
 	{
 		get => name;
 		set { name = value; OnPropertyChanged(); }
+	}
+
+	public MossyDocument? CoverDocument
+	{
+		get => coverDocument;
+		set { coverDocument = value; OnPropertyChanged(); }
 	}
 
 	public ObservableCollection<string> AltNames { get; set; } = new();
@@ -232,11 +305,13 @@ internal interface IMossyDatabase
 	public bool DeleteProjectAltName(MossyProject project, string altName);
 	public bool AddProjectTag(MossyProject project, MossyTag tag);
 	public bool DeleteProjectTag(MossyProject project, MossyTag tag);
+	public bool SetProjectCoverDocument(MossyProject project, MossyDocument document);
 
 	public bool AddTag(string name, string category);
 	public bool DeleteTag(MossyTag tag);
 	public bool SetTagName(MossyTag tag, string newName);
 	public bool SetTagCategory(MossyTag tag, string newCategory);
+	public bool SetTagCoverDocument(MossyTag tag, MossyDocument document);
 
 	public bool AddDocument(DragDropEffects operation, MossyProject project, string path);
 	public bool AddDocument(DragDropEffects operation, MossyTag tag, string path);

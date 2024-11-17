@@ -43,6 +43,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
 		AddProjectTagCommand = new DelegateCommand(AddProjectTagHandler);
 		DeleteProjectTagCommand = new DelegateCommand(DeleteProjectTagHandler);
+		SetProjectCoverDocumentCommand = new DelegateCommand(SetProjectCoverDocumentHandler);
 
 		AddTagCommand = new DelegateCommand(AddTagHandler);
 		DeleteTagCommand = new DelegateCommand(DeleteTagHandler);
@@ -207,6 +208,51 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Database.DeleteProjectTag(SelectedProject, tag);
 	}
 
+	public ICommand? SetProjectCoverDocumentCommand { get; }
+	private void SetProjectCoverDocumentHandler(object? param)
+	{
+		Debug.Assert(SelectedProject != null);
+		if (param == null || param is not MossyDocument)
+		{
+			Debug.Assert(false, "Invalid SetProjectCoverDocument parameter!");
+			return;
+		}
+		MossyDocument document = (MossyDocument)param;
+
+		if (document.Path.Type != MossyDocumentPathType.File)
+		{
+			MessageBox.Show(
+				$"Cover document must be a file.",
+				"Failed to set cover document", MessageBoxButton.OK);
+			return;
+		}
+
+		string? extension = Path.GetExtension(document.Path.Path);
+		if (extension == null)
+		{
+			MessageBox.Show(
+				$"Invalid file extension.",
+				"Failed to set cover document", MessageBoxButton.OK);
+			return;
+		}
+		extension = extension.ToLower();
+		switch (extension)
+		{
+			// Supported image formats
+			case ".png": break;
+			case ".gif": break;
+			case ".jpg": break;
+			case ".tga": break;
+
+			default:
+				MessageBox.Show(
+					$"Unsupported file extension '{extension}'.",
+					"Failed to set cover document", MessageBoxButton.OK);
+				return;
+		}
+
+		Database.SetProjectCoverDocument(SelectedProject, document);
+	}
 
 	public ICommand? AddTagCommand { get; }
 	private void AddTagHandler(object? param)
@@ -503,7 +549,14 @@ internal class ViewModel : NotifyPropertyChangedBase
 			case MossyDocumentPathType.File:
 				{
 					string? extension = Path.GetExtension(doc.Path.Path);
-					Debug.Assert(extension != null);
+					if (extension == null)
+					{
+						MessageBox.Show(
+							$"Invalid file extension.",
+							"Error", MessageBoxButton.OK);
+						return;
+					}
+					extension = extension.ToLower();
 					switch (extension)
 					{
 
