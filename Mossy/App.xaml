@@ -11,6 +11,8 @@
 		<s:Boolean x:Key="True">True</s:Boolean>
 		<s:Boolean x:Key="False">False</s:Boolean>
 		<Visibility x:Key="Hidden">Hidden</Visibility>
+		<Visibility x:Key="Visible">Visible</Visibility>
+		<Visibility x:Key="Collapsed">Collapsed</Visibility>
 
 
 		<!--Converters-->
@@ -253,6 +255,18 @@
 			</Setter>
 		</Style>
 		<Style TargetType="Button" BasedOn="{StaticResource Style-Button-Base}"/>
+
+		<Style x:Key="Style-Button-Empty" TargetType="Button">
+			<Setter Property="SnapsToDevicePixels" Value="True"/>
+			<Setter Property="OverridesDefaultStyle" Value="True"/>
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="Button">
+						<ContentPresenter/>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
 
 
 		<!--Menu-->

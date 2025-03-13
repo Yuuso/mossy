@@ -1079,6 +1079,58 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
+	public bool SetProjectDateCreated(MossyProject project, DateTime date)
+	{
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to set project date!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		DateTimeOffset offset = date;
+
+		using var command = connection.CreateCommand();
+
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET date_created = $date
+			WHERE project_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$date", offset);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to set project date!", MessageBoxButton.OK);
+			return false;
+		}
+
+		project.DateCreated = date;
+
+		return true;
+	}
+
 
 	public bool AddTag(string name, string category)
 	{
@@ -1410,6 +1462,58 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		}
 
 		tag.CoverDocument = document;
+		return true;
+	}
+
+	public bool SetTagDateCreated(MossyTag tag, DateTime date)
+	{
+		if (!Tags.Contains(tag))
+		{
+			MessageBox.Show(
+				$"Tag (id={tag.TagId}) not found.",
+				"Failed to set tag date!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		DateTimeOffset offset = date;
+
+		using var command = connection.CreateCommand();
+
+		command.CommandText =
+		@"
+			UPDATE tags
+			SET date_created = $date
+			WHERE tag_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$date", offset);
+		command.Parameters.AddWithValue("$id", tag.TagId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to set tag date!", MessageBoxButton.OK);
+			return false;
+		}
+
+		tag.DateCreated = date;
+
 		return true;
 	}
 

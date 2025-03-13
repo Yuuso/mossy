@@ -303,9 +303,23 @@
 						Grid.Row="1"
 						Margin="30">
 
-						<TextBlock
-							FontWeight="Light"
-							Text="{Binding SelectedProject.DateCreated, StringFormat='MMM d, yyyy'}"/>
+						<Button
+							Command="{Binding SetProjectCreatedDateCommand}"
+							Style="{StaticResource Style-Button-Empty}">
+							<TextBlock
+								FontWeight="Light"
+								Text="{Binding SelectedProject.DateCreated, StringFormat='MMM d, yyyy'}">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
+										<Style.Triggers>
+											<Trigger Property="IsMouseOver" Value="True">
+												<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
+											</Trigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</Button>
 
 						<TextBlock
 							FontSize="50"

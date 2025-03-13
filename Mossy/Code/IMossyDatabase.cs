@@ -306,12 +306,14 @@ internal interface IMossyDatabase
 	public bool AddProjectTag(MossyProject project, MossyTag tag);
 	public bool DeleteProjectTag(MossyProject project, MossyTag tag);
 	public bool SetProjectCoverDocument(MossyProject project, MossyDocument document);
+	public bool SetProjectDateCreated(MossyProject project, DateTime date);
 
 	public bool AddTag(string name, string category);
 	public bool DeleteTag(MossyTag tag);
 	public bool SetTagName(MossyTag tag, string newName);
 	public bool SetTagCategory(MossyTag tag, string newCategory);
 	public bool SetTagCoverDocument(MossyTag tag, MossyDocument document);
+	public bool SetTagDateCreated(MossyTag tag, DateTime date);
 
 	public bool AddDocument(DragDropEffects operation, MossyProject project, string path);
 	public bool AddDocument(DragDropEffects operation, MossyTag tag, string path);

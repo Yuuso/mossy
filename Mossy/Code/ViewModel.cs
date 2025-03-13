@@ -44,6 +44,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		AddProjectTagCommand = new DelegateCommand(AddProjectTagHandler);
 		DeleteProjectTagCommand = new DelegateCommand(DeleteProjectTagHandler);
 		SetProjectCoverDocumentCommand = new DelegateCommand(SetProjectCoverDocumentHandler);
+		SetProjectCreatedDateCommand = new DelegateCommand(SetProjectCreatedDateHandler);
 
 		AddTagCommand = new DelegateCommand(AddTagHandler);
 		DeleteTagCommand = new DelegateCommand(DeleteTagHandler);
@@ -253,6 +254,20 @@ internal class ViewModel : NotifyPropertyChangedBase
 
 		Database.SetProjectCoverDocument(SelectedProject, document);
 	}
+
+	public ICommand? SetProjectCreatedDateCommand { get; }
+	private void SetProjectCreatedDateHandler(object? param)
+	{
+		Debug.Assert(SelectedProject != null);
+
+		var dialog = new DatePickerDialog(SelectedProject.Name, "Select Creation Date");
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value && dialog.Result != null)
+		{
+			Database.SetProjectDateCreated(SelectedProject, (DateTime)dialog.Result);
+		}
+	}
+
 
 	public ICommand? AddTagCommand { get; }
 	private void AddTagHandler(object? param)
