@@ -302,6 +302,7 @@ internal interface IMossyDatabase
 	public bool DeleteProject(MossyProject project);
 	public bool SetProjectName(MossyProject project, string newName);
 	public bool AddProjectAltName(MossyProject project, string altName);
+	public bool SetProjectAltName(MossyProject project, string oldAltName, string newAltName);
 	public bool DeleteProjectAltName(MossyProject project, string altName);
 	public bool AddProjectTag(MossyProject project, MossyTag tag);
 	public bool DeleteProjectTag(MossyProject project, MossyTag tag);

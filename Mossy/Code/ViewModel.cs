@@ -40,6 +40,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		SetProjectNameCommand = new DelegateCommand(SetProjectNameHandler);
 		DeleteProjectCommand = new DelegateCommand(DeleteProjectHandler);
 		AddProjectAltNameCommand = new DelegateCommand(AddProjectAltNameHandler);
+		SetProjectAltNameCommand = new DelegateCommand(SetProjectAltNameHandler);
 		DeleteProjectAltNameCommand = new DelegateCommand(DeleteProjectAltNameHandler);
 		AddProjectTagCommand = new DelegateCommand(AddProjectTagHandler);
 		DeleteProjectTagCommand = new DelegateCommand(DeleteProjectTagHandler);
@@ -165,6 +166,36 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+	public ICommand? SetProjectAltNameCommand { get; }
+	private void SetProjectAltNameHandler(object? param)
+	{
+		if (param == null || param is not string)
+		{
+			Debug.Assert(false, "Invalid parameter!");
+			return;
+		}
+		if (SelectedProject == null)
+		{
+			Debug.Assert(false, "No project selected!?");
+			return;
+		}
+		string oldName = (string)param;
+		var dialog = new TextInputDialog("Modify Alt Name", "Name", oldName);
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value)
+		{
+			if (dialog.Result1 == "")
+			{
+				// TODO: Ideally this is handled separately...
+				Database.DeleteProjectAltName(SelectedProject, oldName);
+			}
+			else if (dialog.Result1 != oldName)
+			{
+				Database.SetProjectAltName(SelectedProject, oldName, dialog.Result1);
+			}
+		}
+	}
+
 	public ICommand? DeleteProjectAltNameCommand { get; }
 	private void DeleteProjectAltNameHandler(object? param)
 	{
@@ -206,7 +237,13 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 		MossyTag tag = (MossyTag)param;
 
-		Database.DeleteProjectTag(SelectedProject, tag);
+		var result = MessageBox.Show(
+			$"Delete tag '{tag.Name}' from project '{SelectedProject.Name}'?" + Environment.NewLine + "This operation cannot be undone!",
+			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+		if (result == MessageBoxResult.Yes)
+		{
+			Database.DeleteProjectTag(SelectedProject, tag);
+		}
 	}
 
 	public ICommand? SetProjectCoverDocumentCommand { get; }
@@ -258,13 +295,17 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public ICommand? SetProjectCreatedDateCommand { get; }
 	private void SetProjectCreatedDateHandler(object? param)
 	{
-		Debug.Assert(SelectedProject != null);
-
-		var dialog = new DatePickerDialog(SelectedProject.Name, "Select Creation Date");
+		if (param == null || param is not MossyProject)
+		{
+			Debug.Assert(false, "Invalid SetProjectName parameter!");
+			return;
+		}
+		MossyProject project = (MossyProject)param;
+		var dialog = new DatePickerDialog(project.Name, "Select Creation Date");
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value && dialog.Result != null)
 		{
-			Database.SetProjectDateCreated(SelectedProject, (DateTime)dialog.Result);
+			Database.SetProjectDateCreated(project, (DateTime)dialog.Result);
 		}
 	}
 

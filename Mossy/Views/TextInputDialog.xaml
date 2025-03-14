@@ -7,26 +7,20 @@
     xmlns:local="clr-namespace:Mossy"
 	SizeToContent="WidthAndHeight"
 	WindowStartupLocation="CenterScreen"
+	Background="{StaticResource Brush-Background}"
 	ContentRendered="Window_ContentRendered"
     Title="">
 
-	<Grid Margin="15">
+	<Grid Margin="20">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="Auto" />
-			<ColumnDefinition Width="*" />
+			<ColumnDefinition Width="Auto" />
 		</Grid.ColumnDefinitions>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
 		</Grid.RowDefinitions>
-
-		<TextBlock
-			Grid.RowSpan="2"
-			Text="?"
-			FontSize="32"
-			Margin="20, 0"
-			Foreground="DarkGray"/>
 
 		<StackPanel
 			Grid.Column="1"

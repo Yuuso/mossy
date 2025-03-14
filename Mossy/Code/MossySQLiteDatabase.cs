@@ -806,6 +806,86 @@ internal class MossySQLiteDatabase : NotifyPropertyChangedBase, IMossyDatabase
 		return true;
 	}
 
+	public bool SetProjectAltName(MossyProject project, string oldAltName, string newAltName)
+	{
+		if (!ValidateProjectName(newAltName))
+		{
+			return false;
+		}
+		if (!Projects.Contains(project))
+		{
+			MessageBox.Show(
+				$"Project (id={project.ProjectId}) not found.",
+				"Failed to set project alt name!", MessageBoxButton.OK);
+			return false;
+		}
+		if (!project.AltNames.Contains(oldAltName))
+		{
+			MessageBox.Show(
+				$"Alt name ({oldAltName}) not found in project.",
+				"Failed to set project alt name!", MessageBoxButton.OK);
+			return false;
+		}
+		if (project.AltNames.Contains(newAltName))
+		{
+			MessageBox.Show(
+				$"Alt name ({newAltName}) already found project.",
+				"Failed to set project alt name!", MessageBoxButton.OK);
+			return false;
+		}
+
+		Debug.Assert(databasePath != null);
+		using var connection = new SqliteConnection($"DataSource={databasePath};Mode=ReadWrite");
+		try
+		{
+			connection.Open();
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to connect to database!", MessageBoxButton.OK);
+			return false;
+		}
+
+		string altNames = newAltName;
+		foreach (string name in project.AltNames)
+		{
+			if (name == oldAltName)
+				continue;
+			altNames = altNames + altNamesSeparator + name;
+		}
+
+		using var transaction = connection.BeginTransaction();
+
+		using var command = connection.CreateCommand();
+		command.CommandText =
+		@"
+			UPDATE projects
+			SET alt_names = $names
+			WHERE project_id = $id;
+		";
+		command.Parameters.Clear();
+		command.Parameters.AddWithValue("$names", altNames);
+		command.Parameters.AddWithValue("$id", project.ProjectId.Value);
+
+		try
+		{
+			var result = command.ExecuteNonQuery();
+			Debug.Assert(result == 1);
+		}
+		catch (SqliteException e)
+		{
+			MessageBox.Show(e.Message, "Failed to set name!", MessageBoxButton.OK);
+			transaction.Rollback();
+			return false;
+		}
+
+		transaction.Commit();
+
+		project.AltNames.Remove(oldAltName);
+		project.AltNames.Add(newAltName);
+		return true;
+	}
+
 	public bool DeleteProjectAltName(MossyProject project, string altName)
 	{
 		if (!project.AltNames.Contains(altName))
