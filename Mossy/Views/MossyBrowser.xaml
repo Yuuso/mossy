@@ -30,7 +30,7 @@
 							  Command="{Binding DeleteProjectCommand}" CommandParameter="{Binding SelectedProject}"
 							  IsEnabled="{Binding SelectedProject, Converter={StaticResource Conv-NotNull}}"/>
 					<MenuItem Header="Delete _Tag"
-							  Command="{Binding DeleteTagCommand}" CommandParameter="{Binding SelectedProject}"
+							  Command="{Binding DeleteTagCommand}" CommandParameter="{Binding SelectedTag}"
 							  IsEnabled="{Binding SelectedTag, Converter={StaticResource Conv-NotNull}}"/>
 				</MenuItem>
 				<MenuItem Header="_About" Command="{Binding AboutCommand}"/>
@@ -191,14 +191,14 @@
 				<!--Project Inspector-->
 				<Grid
 					Grid.Column="2"
-					x:Name="ProjectBorder"
+					x:Name="InspectorInspector"
 					Visibility="{Binding SelectedProject, Converter={StaticResource Conv-Visibility}}"
-					DragOver="Project_DragOver"
-					Drop="Project_Drop"
-					PreviewDragEnter="Project_PreviewDragEnter"
-					PreviewDragLeave="Project_PreviewDragLeave"
-					PreviewDragOver="Project_PreviewDragOver"
-					PreviewDrop="Project_PreviewDrop">
+					DragOver="Inspector_DragOver"
+					Drop="Inspector_Drop"
+					PreviewDragEnter="Inspector_PreviewDragEnter"
+					PreviewDragLeave="Inspector_PreviewDragLeave"
+					PreviewDragOver="Inspector_PreviewDragOver"
+					PreviewDrop="Inspector_PreviewDrop">
 
 					<Grid.Style>
 						<Style TargetType="Grid">
@@ -206,14 +206,14 @@
 								<Storyboard x:Key="BeginDragStoryboard">
 									<ColorAnimation
 										Duration="0:0:0"
-										Storyboard.TargetName="ProjectBorder"
+										Storyboard.TargetName="ProjectInspector"
 										Storyboard.TargetProperty="BorderBrush.Color"
 										To="LimeGreen"/>
 								</Storyboard>
 								<Storyboard x:Key="EndDragStoryboard">
 									<ColorAnimation
 										Duration="0:0:0"
-										Storyboard.TargetName="ProjectBorder"
+										Storyboard.TargetName="ProjectInspector"
 										Storyboard.TargetProperty="BorderBrush.Color"
 										To="White"/>
 								</Storyboard>
@@ -423,8 +423,19 @@
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>
 										<Border Background="{StaticResource Brush-Background-Alpha50}" CornerRadius="20" Margin="0,0,4,0">
+											<Border.ToolTip>
+												<TextBlock Text="{Binding Category}"/>
+											</Border.ToolTip>
+											<Border.ContextMenu>
+												<ContextMenu>
+													<MenuItem
+														Header="Delete"
+														Command="{Binding DataContext.DeleteProjectTagCommand, Source={x:Reference MossyBrowserRoot}}"
+														CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+												</ContextMenu>
+											</Border.ContextMenu>
 											<Button
-												Command="{Binding DataContext.DeleteProjectTagCommand, ElementName=MossyBrowserRoot}"
+												Command="{Binding DataContext.SelectTagCommand, ElementName=MossyBrowserRoot}"
 												CommandParameter="{Binding}"
 												Style="{StaticResource Style-Button-Empty}">
 												<TextBlock
@@ -439,8 +450,6 @@
 															</Style.Triggers>
 														</Style>
 													</TextBlock.Style>
-													<Run Text="{Binding Category}"/>
-													<Run Text="-"/>
 													<Run Text="{Binding Name}"/>
 												</TextBlock>
 											</Button>
@@ -546,7 +555,6 @@
 											<Separator/>
 											<MenuItem
 												Header="Delete"
-												Foreground="Red"
 												Command="{Binding DataContext.DeleteDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
 												CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
 										</ContextMenu>
@@ -593,9 +601,342 @@
 
 
 				<!--Tag Inspector-->
-				<Border Grid.Column="2" Visibility="Collapsed">
-					<TextBlock Text="TODO TAG INSPECTOR" Foreground="{StaticResource Brush-Foreground}"/>
-				</Border>
+				<Grid
+					Grid.Column="2"
+					x:Name="TagInspector"
+					Visibility="{Binding SelectedTag, Converter={StaticResource Conv-Visibility}}"
+					DragOver="Inspector_DragOver"
+					Drop="Inspector_Drop"
+					PreviewDragEnter="Inspector_PreviewDragEnter"
+					PreviewDragLeave="Inspector_PreviewDragLeave"
+					PreviewDragOver="Inspector_PreviewDragOver"
+					PreviewDrop="Inspector_PreviewDrop">
+
+					<Grid.Style>
+						<Style TargetType="Grid">
+							<Style.Resources>
+								<Storyboard x:Key="BeginDragStoryboard">
+									<ColorAnimation
+										Duration="0:0:0"
+										Storyboard.TargetName="TagInspector"
+										Storyboard.TargetProperty="BorderBrush.Color"
+										To="LimeGreen"/>
+								</Storyboard>
+								<Storyboard x:Key="EndDragStoryboard">
+									<ColorAnimation
+										Duration="0:0:0"
+										Storyboard.TargetName="TagInspector"
+										Storyboard.TargetProperty="BorderBrush.Color"
+										To="White"/>
+								</Storyboard>
+							</Style.Resources>
+							<Setter Property="AllowDrop" Value="True"/>
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding SelectedTag}" Value="{x:Null}">
+									<Setter Property="AllowDrop" Value="False"/>
+								</DataTrigger>
+								<EventTrigger RoutedEvent="DragEnter">
+									<EventTrigger.Actions>
+										<BeginStoryboard Storyboard="{StaticResource BeginDragStoryboard}"/>
+									</EventTrigger.Actions>
+								</EventTrigger>
+								<EventTrigger RoutedEvent="Drop">
+									<EventTrigger.Actions>
+										<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
+									</EventTrigger.Actions>
+								</EventTrigger>
+								<EventTrigger RoutedEvent="DragLeave">
+									<EventTrigger.Actions>
+										<BeginStoryboard Storyboard="{StaticResource EndDragStoryboard}"/>
+									</EventTrigger.Actions>
+								</EventTrigger>
+							</Style.Triggers>
+						</Style>
+					</Grid.Style>
+
+					<Grid.RowDefinitions>
+						<RowDefinition Height="*"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="3*"/>
+					</Grid.RowDefinitions>
+
+					<Border Grid.RowSpan="99" Background="{StaticResource Brush-Disabled-Middleground}"/>
+					<Image
+						Grid.RowSpan="99"
+						Visibility="{Binding SelectedTag, Converter={StaticResource Conv-Visibility}}"
+						Stretch="UniformToFill"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Top">
+						<Image.Source>
+							<MultiBinding Converter="{StaticResource Conv-DocumentPathImage}">
+								<Binding Path="DataContext.SelectedTag.CoverDocument" ElementName="MossyBrowserRoot"/>
+								<Binding Path="DataContext.Database" ElementName="MossyBrowserRoot"/>
+							</MultiBinding>
+						</Image.Source>
+					</Image>
+					<Image
+						Grid.RowSpan="99"
+						Visibility="{Binding SelectedTag, Converter={StaticResource Conv-Visibility}}"
+						Stretch="UniformToFill"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Top">
+						<Image.Source>
+							<MultiBinding Converter="{StaticResource Conv-DocumentPathImage}">
+								<Binding Path="DataContext.SelectedTag.CoverDocument" ElementName="MossyBrowserRoot"/>
+								<Binding Path="DataContext.Database" ElementName="MossyBrowserRoot"/>
+							</MultiBinding>
+						</Image.Source>
+						<Image.Effect>
+							<BlurEffect Radius="60" RenderingBias="Quality" KernelType="Gaussian"/>
+						</Image.Effect>
+						<Image.OpacityMask>
+							<LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+								<GradientStop Color="Transparent" Offset="0"/>
+								<GradientStop Color="White" Offset="0.5"/>
+							</LinearGradientBrush>
+						</Image.OpacityMask>
+					</Image>
+					<Border
+						Grid.RowSpan="99"
+						Background="{StaticResource Brush-Background}">
+						<Border.OpacityMask>
+							<LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+								<GradientStop Color="#00FFFFFF" Offset="0"/>
+								<GradientStop Color="#70FFFFFF" Offset="0.125"/>
+								<GradientStop Color="#BFFFFFFF" Offset="0.25"/>
+								<GradientStop Color="#E0FFFFFF" Offset="0.375"/>
+								<GradientStop Color="#EFFFFFFF" Offset="0.5"/>
+								<GradientStop Color="#FFFFFFFF" Offset="1"/>
+							</LinearGradientBrush>
+						</Border.OpacityMask>
+					</Border>
+
+					<StackPanel
+						Grid.Row="1"
+						Margin="30">
+
+						<Button
+							Command="{Binding SetTagCreatedDateCommand}"
+							CommandParameter="{Binding SelectedTag}"
+							HorizontalAlignment="Left"
+							Style="{StaticResource Style-Button-Empty}">
+							<TextBlock
+								FontWeight="Light"
+								Text="{Binding SelectedTag.DateCreated, StringFormat='MMM d, yyyy'}">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
+										<Style.Triggers>
+											<Trigger Property="IsMouseOver" Value="True">
+												<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
+											</Trigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</Button>
+
+						<Button
+							Command="{Binding SetTagNameCommand}"
+							CommandParameter="{Binding SelectedTag}"
+							HorizontalAlignment="Left"
+							Style="{StaticResource Style-Button-Empty}">
+							<TextBlock
+								FontSize="50"
+								FontWeight="SemiBold"
+								Text="{Binding SelectedTag.Name}">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
+										<Style.Triggers>
+											<Trigger Property="IsMouseOver" Value="True">
+												<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
+											</Trigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</Button>
+
+						<Button
+							Command="{Binding SetTagCategoryCommand}"
+							CommandParameter="{Binding SelectedTag}"
+							Style="{StaticResource Style-Button-Empty}"
+							HorizontalAlignment="Left"
+							Margin="0,8,0,0">
+							<TextBlock
+								FontWeight="Regular">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
+										<Setter Property="Text" Value="{Binding SelectedTag.Category}"/>
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding SelectedTag.Category}" Value="">
+												<Setter Property="Text" Value="&lt;no category&gt;"/>
+												<Setter Property="Foreground" Value="{StaticResource Brush-Disabled-Foreground}"/>
+											</DataTrigger>
+											<Trigger Property="IsMouseOver" Value="True">
+												<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
+											</Trigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</Button>
+
+						<Button
+							Command="{Binding SearchTagCommand}"
+							CommandParameter="{Binding SelectedTag}"
+							Style="{StaticResource Style-Button-Empty}"
+							HorizontalAlignment="Left"
+							Margin="0,12,0,0">
+							<TextBlock
+								Text="SEARCH"
+								FontWeight="Bold">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
+										<Setter Property="Foreground" Value="{StaticResource Brush-Label}"/>
+										<Style.Triggers>
+											<Trigger Property="IsMouseOver" Value="True">
+												<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
+											</Trigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</Button>
+
+					</StackPanel>
+
+					<ListBox
+						Grid.Row="2"
+						Margin="30,0,30,30"
+						Background="Transparent"
+						BorderBrush="Transparent"
+						SelectionMode="Extended"
+						ItemsSource="{Binding SelectedTag.Documents}">
+
+						<ListBox.Resources>
+							<Style TargetType="ListBoxItem">
+								<Setter Property="Template">
+									<Setter.Value>
+										<ControlTemplate TargetType="ListBoxItem">
+											<Border x:Name="Border" Padding="2" SnapsToDevicePixels="True" BorderThickness="1">
+												<Border.Background>
+													<SolidColorBrush Color="Transparent"/>
+												</Border.Background>
+												<Border.BorderBrush>
+													<SolidColorBrush Color="Transparent"/>
+												</Border.BorderBrush>
+												<VisualStateManager.VisualStateGroups>
+													<VisualStateGroup x:Name="CommonStates">
+														<VisualState x:Name="Normal"/>
+														<VisualState x:Name="MouseOver">
+															<Storyboard>
+																<ColorAnimationUsingKeyFrames
+																	Storyboard.TargetName="Border"
+																	Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)">
+																	<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent}"/>
+																</ColorAnimationUsingKeyFrames>
+															</Storyboard>
+														</VisualState>
+														<VisualState x:Name="Disabled"/>
+													</VisualStateGroup>
+													<VisualStateGroup x:Name="SelectionStates">
+														<VisualState x:Name="Unselected"/>
+														<VisualState x:Name="Selected">
+															<Storyboard>
+																<ColorAnimationUsingKeyFrames
+																	Storyboard.TargetName="Border"
+																	Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+																	<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent-Alpha25}"/>
+																</ColorAnimationUsingKeyFrames>
+															</Storyboard>
+														</VisualState>
+														<VisualState x:Name="SelectedUnfocused">
+															<Storyboard>
+																<ColorAnimationUsingKeyFrames
+																	Storyboard.TargetName="Border"
+																	Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)">
+																	<EasingColorKeyFrame KeyTime="0" Value="{StaticResource Color-Accent-Alpha25}"/>
+																</ColorAnimationUsingKeyFrames>
+															</Storyboard>
+														</VisualState>
+													</VisualStateGroup>
+												</VisualStateManager.VisualStateGroups>
+												<ContentPresenter/>
+											</Border>
+										</ControlTemplate>
+									</Setter.Value>
+								</Setter>
+							</Style>
+						</ListBox.Resources>
+
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Border
+									MouseMove="Document_MouseMove"
+									MouseDown="Document_MouseDown"
+									Padding="8"
+									Background="{StaticResource Brush-Middleground}"
+									BorderBrush="{StaticResource Brush-Middleground-Border}"
+									BorderThickness="1">
+
+									<Border.ContextMenu>
+										<ContextMenu>
+											<MenuItem
+												Header="Rename"
+												Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource Conv-RenameVisibility}}"
+												Command="{Binding DataContext.SetDocumentNameCommand, Source={x:Reference MossyBrowserRoot}}"
+												CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+											<MenuItem Header="Add To Queue" IsEnabled="False"/>
+											<MenuItem
+												Header="Set As Cover"
+												Command="{Binding DataContext.SetTagCoverDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
+												CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+											<Separator/>
+											<MenuItem
+												Header="Delete"
+												Command="{Binding DataContext.DeleteDocumentCommand, Source={x:Reference MossyBrowserRoot}}"
+												CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+										</ContextMenu>
+									</Border.ContextMenu>
+
+									<StackPanel>
+										<TextBlock
+											FontSize="14"
+											Foreground="{StaticResource Brush-Label}"
+											Text="{Binding DateCreated, StringFormat='g'}"/>
+										<StackPanel Orientation="Horizontal" Height="28">
+											<Path
+												VerticalAlignment="Center"
+												Margin="5"
+												Stretch="Uniform"
+												Fill="{StaticResource Brush-Foreground}">
+												<Path.Style>
+													<Style TargetType="Path">
+														<Setter Property="Data" Value="{StaticResource Geometry-DocType-File}"/>
+														<Style.Triggers>
+															<DataTrigger Binding="{Binding Path.Type}" Value="{x:Static local:MossyDocumentPathType.Link}">
+																<Setter Property="Data" Value="{StaticResource Geometry-DocType-Link}"/>
+															</DataTrigger>
+															<DataTrigger Binding="{Binding Path.Type}" Value="{x:Static local:MossyDocumentPathType.Url}">
+																<Setter Property="Data" Value="{StaticResource Geometry-DocType-Url}"/>
+															</DataTrigger>
+														</Style.Triggers>
+													</Style>
+												</Path.Style>
+											</Path>
+											<TextBlock
+												VerticalAlignment="Center"
+												Margin="6,0,0,0"
+												FontSize="18"
+												Text="{Binding Path.DisplayPath}"/>
+										</StackPanel>
+									</StackPanel>
+								</Border>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+
+				</Grid>
 
 
 				<!--Divider-->

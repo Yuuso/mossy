@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection.Metadata;
@@ -18,15 +19,65 @@ internal class ViewModel : NotifyPropertyChangedBase
 		Projects.Source = Database.Projects;
 		Projects.Filter += (sender, eventArgs) =>
 		{
-			eventArgs.Accepted = eventArgs.Item is MossyProject project &&
-				project.Name.Contains(SearchFilter);
+			if (eventArgs.Item is MossyProject project)
+			{
+				if (project.Name.Contains(SearchFilter))
+				{
+					eventArgs.Accepted = true;
+					return;
+				}
+				foreach (string name in project.AltNames)
+				{
+					if (name.Contains(SearchFilter))
+					{
+						eventArgs.Accepted = true;
+						return;
+					}
+				}
+				foreach (MossyTag tag in project.Tags)
+				{
+					if (tag.Name.Contains(SearchFilter))
+					{
+						eventArgs.Accepted = true;
+						return;
+					}
+				}
+				foreach (MossyDocument doc in project.Documents)
+				{
+					if (doc.Path.RawPath.Contains(SearchFilter))
+					{
+						eventArgs.Accepted = true;
+						return;
+					}
+				}
+			}
+			eventArgs.Accepted = false;
 		};
+		Projects.SortDescriptions.Add(new SortDescription{ PropertyName = "Name" });
 		Tags.Source = Database.Tags;
 		Tags.Filter += (sender, eventArgs) =>
 		{
-			eventArgs.Accepted = eventArgs.Item is MossyTag tag &&
-				tag.Name.Contains(SearchFilter);
+			if (eventArgs.Item is MossyTag tag)
+			{
+				if (tag.Name.Contains(SearchFilter) ||
+					tag.Category.Contains(SearchFilter))
+				{
+					eventArgs.Accepted = true;
+					return;
+				}
+				foreach (MossyDocument doc in tag.Documents)
+				{
+					if (doc.Path.RawPath.Contains(SearchFilter))
+					{
+						eventArgs.Accepted = true;
+						return;
+					}
+				}
+			}
+			eventArgs.Accepted = false;
 		};
+		Tags.SortDescriptions.Add(new SortDescription{ PropertyName = "Category" });
+		Tags.SortDescriptions.Add(new SortDescription{ PropertyName = "Name" });
 
 		MediaPlayer = new MediaPlayerViewModel();
 
@@ -47,10 +98,14 @@ internal class ViewModel : NotifyPropertyChangedBase
 		SetProjectCoverDocumentCommand = new DelegateCommand(SetProjectCoverDocumentHandler);
 		SetProjectCreatedDateCommand = new DelegateCommand(SetProjectCreatedDateHandler);
 
+		SelectTagCommand = new DelegateCommand(SelectTagHandler);
+		SearchTagCommand = new DelegateCommand(SearchTagHandler);
 		AddTagCommand = new DelegateCommand(AddTagHandler);
 		DeleteTagCommand = new DelegateCommand(DeleteTagHandler);
-		RenameTagCommand = new DelegateCommand(RenameTagHandler);
+		SetTagNameCommand = new DelegateCommand(SetTagNameHandler);
 		SetTagCategoryCommand = new DelegateCommand(SetTagCategoryHandler);
+		SetTagCoverDocumentCommand = new DelegateCommand(SetTagCoverDocumentHandler);
+		SetTagCreatedDateCommand = new DelegateCommand(SetTagCreatedDateHandler);
 
 		SetDocumentNameCommand = new DelegateCommand(SetDocumentNameHandler);
 		DeleteDocumentCommand = new DelegateCommand(DeleteDocumentHandler);
@@ -280,6 +335,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			case ".png": break;
 			case ".gif": break;
 			case ".jpg": break;
+			case ".jpeg": break;
 			case ".tga": break;
 
 			default:
@@ -309,6 +365,28 @@ internal class ViewModel : NotifyPropertyChangedBase
 		}
 	}
 
+
+	public ICommand? SelectTagCommand { get; }
+	private void SelectTagHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid SelectTag parameter!");
+			return;
+		}
+		SelectedTag = (MossyTag)param;
+	}
+
+	public ICommand? SearchTagCommand { get; }
+	private void SearchTagHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid SearchTag parameter!");
+			return;
+		}
+		SearchFilter = ((MossyTag)param).Name;
+	}
 
 	public ICommand? AddTagCommand { get; }
 	private void AddTagHandler(object? param)
@@ -340,20 +418,26 @@ internal class ViewModel : NotifyPropertyChangedBase
 			return;
 		}
 		MossyTag tag = (MossyTag)param;
-		Database.DeleteTag(tag);
+		var result = MessageBox.Show(
+			$"Delete tag '{tag.Name}'?" + Environment.NewLine + "This operation cannot be undone!",
+			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+		if (result == MessageBoxResult.Yes)
+		{
+			Database.DeleteTag(tag);
+		}
 	}
 
-	public ICommand? RenameTagCommand { get; }
-	private void RenameTagHandler(object? param)
+	public ICommand? SetTagNameCommand { get; }
+	private void SetTagNameHandler(object? param)
 	{
 		if (param == null || param is not MossyTag)
 		{
-			Debug.Assert(false, "Invalid RenameTag parameter!");
+			Debug.Assert(false, "Invalid SetTagName parameter!");
 			return;
 		}
 		MossyTag tag = (MossyTag)param;
 
-		var dialog = new TextInputDialog("Rename", "Tag Name", tag.Name);
+		var dialog = new TextInputDialog("Set Name", "Tag Name", tag.Name);
 		var result = dialog.ShowDialog();
 		if (result.HasValue && result.Value)
 		{
@@ -384,6 +468,70 @@ internal class ViewModel : NotifyPropertyChangedBase
 				return;
 			}
 			Database.SetTagCategory(tag, dialog.Result1);
+		}
+	}
+
+	public ICommand? SetTagCoverDocumentCommand { get; }
+	private void SetTagCoverDocumentHandler(object? param)
+	{
+		Debug.Assert(SelectedTag != null);
+		if (param == null || param is not MossyDocument)
+		{
+			Debug.Assert(false, "Invalid SetTagCoverDocument parameter!");
+			return;
+		}
+		MossyDocument document = (MossyDocument)param;
+
+		if (document.Path.Type != MossyDocumentPathType.File)
+		{
+			MessageBox.Show(
+				$"Cover document must be a file.",
+				"Failed to set cover document", MessageBoxButton.OK);
+			return;
+		}
+
+		string? extension = Path.GetExtension(document.Path.Path);
+		if (extension == null)
+		{
+			MessageBox.Show(
+				$"Invalid file extension.",
+				"Failed to set cover document", MessageBoxButton.OK);
+			return;
+		}
+		extension = extension.ToLower();
+		switch (extension)
+		{
+			// Supported image formats
+			case ".png": break;
+			case ".gif": break;
+			case ".jpg": break;
+			case ".jpeg": break;
+			case ".tga": break;
+
+			default:
+				MessageBox.Show(
+					$"Unsupported file extension '{extension}'.",
+					"Failed to set cover document", MessageBoxButton.OK);
+				return;
+		}
+
+		Database.SetTagCoverDocument(SelectedTag, document);
+	}
+
+	public ICommand? SetTagCreatedDateCommand { get; }
+	private void SetTagCreatedDateHandler(object? param)
+	{
+		if (param == null || param is not MossyTag)
+		{
+			Debug.Assert(false, "Invalid SetTagName parameter!");
+			return;
+		}
+		MossyTag tag = (MossyTag)param;
+		var dialog = new DatePickerDialog(tag.Name, "Select Creation Date");
+		var result = dialog.ShowDialog();
+		if (result.HasValue && result.Value && dialog.Result != null)
+		{
+			Database.SetTagDateCreated(tag, (DateTime)dialog.Result);
 		}
 	}
 
@@ -663,6 +811,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 		set
 		{
 			searchFilter = value;
+			OnPropertyChanged();
 
 			Projects.View.Refresh();
 			Tags.View.Refresh();

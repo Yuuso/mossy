@@ -805,5 +805,11 @@
 			</Style.Triggers>
 		</Style>
 
+
+		<!--Tooltip-->
+		<Style TargetType="ToolTip">
+			<Setter Property="Background" Value="{StaticResource Brush-Background}"/>
+		</Style>
+
 	</Application.Resources>
 </Application>

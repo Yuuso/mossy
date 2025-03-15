@@ -13,32 +13,32 @@ public partial class MossyBrowser : UserControl
 	}
 
 
-	private void Project_PreviewDragEnter(object _, DragEventArgs e)
+	private void Inspector_PreviewDragEnter(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.PreviewDocumentDragDrops(e);
 	}
-	private void Project_PreviewDragLeave(object _, DragEventArgs e)
+	private void Inspector_PreviewDragLeave(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.PreviewDocumentDragDrops(e);
 	}
-	private void Project_PreviewDragOver(object _, DragEventArgs e)
+	private void Inspector_PreviewDragOver(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.PreviewDocumentDragDrops(e);
 	}
-	private void Project_PreviewDrop(object _, DragEventArgs e)
+	private void Inspector_PreviewDrop(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.PreviewDocumentDragDrops(e);
 	}
-	private void Project_DragOver(object _, DragEventArgs e)
+	private void Inspector_DragOver(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.DocumentDragOver(e);
 	}
-	private void Project_Drop(object _, DragEventArgs e)
+	private void Inspector_Drop(object _, DragEventArgs e)
 	{
 		var vm = DataContext as ViewModel;
 		vm?.DocumentDrop(e);
