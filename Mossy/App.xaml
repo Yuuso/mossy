@@ -626,9 +626,12 @@
 							<Border.BorderBrush>
 								<SolidColorBrush Color="{StaticResource Color-Middleground-Border}"/>
 							</Border.BorderBrush>
-							<StackPanel
-								IsItemsHost="True"
-								KeyboardNavigation.DirectionalNavigation="Cycle"/>
+							<ScrollViewer CanContentScroll="True">
+								<StackPanel
+									MaxHeight="600"
+									IsItemsHost="True"
+									KeyboardNavigation.DirectionalNavigation="Cycle"/>
+							</ScrollViewer>
 						</Border>
 						<ControlTemplate.Triggers>
 							<Trigger Property="HasDropShadow" Value="true">

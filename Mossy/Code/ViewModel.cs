@@ -78,6 +78,28 @@ internal class ViewModel : NotifyPropertyChangedBase
 		};
 		Tags.SortDescriptions.Add(new SortDescription{ PropertyName = "Category" });
 		Tags.SortDescriptions.Add(new SortDescription{ PropertyName = "Name" });
+		AppendableProjectTags.Source = Database.Tags;
+		AppendableProjectTags.Filter += (sender, eventArgs) =>
+		{
+			if (SelectedProject == null)
+			{
+				eventArgs.Accepted = false;
+				return;
+			}
+			if (eventArgs.Item is MossyTag tag)
+			{
+				if (tag.Projects.Contains(SelectedProject))
+				{
+					eventArgs.Accepted = false;
+					return;
+				}
+				eventArgs.Accepted = true;
+				return;
+			}
+			eventArgs.Accepted = false;
+		};
+		AppendableProjectTags.SortDescriptions.Add(new SortDescription{ PropertyName = "Category" });
+		AppendableProjectTags.SortDescriptions.Add(new SortDescription{ PropertyName = "Name" });
 
 		MediaPlayer = new MediaPlayerViewModel();
 
@@ -291,14 +313,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 			return;
 		}
 		MossyTag tag = (MossyTag)param;
-
-		var result = MessageBox.Show(
-			$"Delete tag '{tag.Name}' from project '{SelectedProject.Name}'?" + Environment.NewLine + "This operation cannot be undone!",
-			"Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-		if (result == MessageBoxResult.Yes)
-		{
-			Database.DeleteProjectTag(SelectedProject, tag);
-		}
+		Database.DeleteProjectTag(SelectedProject, tag);
 	}
 
 	public ICommand? SetProjectCoverDocumentCommand { get; }
@@ -803,6 +818,7 @@ internal class ViewModel : NotifyPropertyChangedBase
 	public IMossyDatabase Database { get; }
 	public CollectionViewSource Projects { get; } = new();
 	public CollectionViewSource Tags { get; } = new();
+	public CollectionViewSource AppendableProjectTags { get; } = new();
 
 	private string searchFilter = "";
 	public string SearchFilter
@@ -829,6 +845,8 @@ internal class ViewModel : NotifyPropertyChangedBase
 
 			selectedTag = null;
 			OnPropertyChanged(nameof(SelectedTag));
+
+			AppendableProjectTags.View.Refresh();
 		}
 	}
 

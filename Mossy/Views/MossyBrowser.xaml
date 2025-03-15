@@ -344,9 +344,8 @@
 							</TextBlock>
 						</Button>
 
-						<StackPanel
-							Orientation="Horizontal"
-							Height="40">
+						<WrapPanel
+							Orientation="Horizontal">
 
 							<TextBlock
 								Text="AKA"
@@ -358,7 +357,7 @@
 							<ItemsControl ItemsSource="{Binding SelectedProject.AltNames}" VerticalAlignment="Center">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
-										<StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+										<WrapPanel Orientation="Horizontal" IsItemsHost="True"/>
 									</ItemsPanelTemplate>
 								</ItemsControl.ItemsPanel>
 								<ItemsControl.ItemTemplate>
@@ -400,11 +399,10 @@
 								Style="{StaticResource Style-Button-Plus}"
 								Command="{Binding AddProjectAltNameCommand}"
 								Margin="8,1,0,0"/>
-						</StackPanel>
+						</WrapPanel>
 
-						<StackPanel
+						<WrapPanel
 							Orientation="Horizontal"
-							Height="40"
 							Margin="0,5,0,0">
 
 							<TextBlock
@@ -417,52 +415,92 @@
 							<ItemsControl ItemsSource="{Binding SelectedProject.Tags}" VerticalAlignment="Center">
 								<ItemsControl.ItemsPanel>
 									<ItemsPanelTemplate>
-										<StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+										<WrapPanel Orientation="Horizontal" IsItemsHost="True"/>
 									</ItemsPanelTemplate>
 								</ItemsControl.ItemsPanel>
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>
-										<Border Background="{StaticResource Brush-Background-Alpha50}" CornerRadius="20" Margin="0,0,4,0">
-											<Border.ToolTip>
-												<TextBlock Text="{Binding Category}"/>
-											</Border.ToolTip>
+										<Border
+											Background="{StaticResource Brush-Middleground-Border}"
+											BorderThickness="1"
+											CornerRadius="15"
+											MinWidth="35"
+											Margin="8,0,4,0">
+											<Border.Style>
+												<Style TargetType="Border">
+													<Setter Property="BorderBrush" Value="Transparent"/>
+													<Style.Triggers>
+														<Trigger Property="IsMouseOver" Value="True">
+															<Setter Property="BorderBrush" Value="{StaticResource Brush-Accent-Alpha75}"/>
+														</Trigger>
+													</Style.Triggers>
+												</Style>
+											</Border.Style>
 											<Border.ContextMenu>
 												<ContextMenu>
 													<MenuItem
+														Visibility="{Binding Category, Converter={StaticResource Conv-Visibility}}"
+														IsEnabled="False"
+														Header="{Binding Category}"/>
+													<MenuItem
+														Header="Show Tag"
+														Command="{Binding DataContext.SelectTagCommand, Source={x:Reference MossyBrowserRoot}}"
+														CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+													<MenuItem
 														Header="Delete"
 														Command="{Binding DataContext.DeleteProjectTagCommand, Source={x:Reference MossyBrowserRoot}}"
-														CommandParameter="{Binding DataContext, RelativeSource={RelativeSource Self}}"/>
+														CommandParameter="{Binding}"/>
 												</ContextMenu>
 											</Border.ContextMenu>
-											<Button
-												Command="{Binding DataContext.SelectTagCommand, ElementName=MossyBrowserRoot}"
-												CommandParameter="{Binding}"
-												Style="{StaticResource Style-Button-Empty}">
-												<TextBlock
-													FontWeight="SemiBold"
-													Margin="10,6">
-													<TextBlock.Style>
-														<Style TargetType="TextBlock" BasedOn="{StaticResource Style-BodyText}">
-															<Style.Triggers>
-																<Trigger Property="IsMouseOver" Value="True">
-																	<Setter Property="Foreground" Value="{StaticResource Brush-Accent}"/>
-																</Trigger>
-															</Style.Triggers>
-														</Style>
-													</TextBlock.Style>
-													<Run Text="{Binding Name}"/>
-												</TextBlock>
-											</Button>
+											<TextBlock
+												Text="{Binding Name}"
+												FontWeight="SemiBold"
+												Margin="10,6"/>
 										</Border>
 									</DataTemplate>
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>
 
 							<Button
-								Style="{StaticResource Style-Button-Plus}"
-								Command="{Binding AddProjectTagCommand}"
-								Margin="8,1,0,0"/>
-						</StackPanel>
+								Margin="8,1,0,0">
+								<Button.Style>
+									<Style TargetType="Button" BasedOn="{StaticResource Style-Button-Plus}">
+										<Style.Triggers>
+											<EventTrigger RoutedEvent="Click">
+												<EventTrigger.Actions>
+													<BeginStoryboard>
+														<Storyboard>
+															<BooleanAnimationUsingKeyFrames
+																Storyboard.TargetProperty="ContextMenu.IsOpen">
+																<!--TODO: This doesn't work all the time...-->
+																<DiscreteBooleanKeyFrame KeyTime="0:0:0" Value="True"/>
+															</BooleanAnimationUsingKeyFrames>
+														</Storyboard>
+													</BeginStoryboard>
+												</EventTrigger.Actions>
+											</EventTrigger>
+										</Style.Triggers>
+									</Style>
+								</Button.Style>
+								<Button.ContextMenu>
+									<ContextMenu ItemsSource="{Binding AppendableProjectTags.View}">
+										<ContextMenu.ItemContainerStyle>
+											<Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+												<Setter Property="Command"
+														Value="{Binding DataContext.AddProjectTagCommand,
+															RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+												<Setter Property="CommandParameter" Value="{Binding}"/>
+											</Style>
+										</ContextMenu.ItemContainerStyle>
+										<ContextMenu.ItemTemplate>
+											<DataTemplate>
+												<TextBlock Text="{Binding Name}"/>
+											</DataTemplate>
+										</ContextMenu.ItemTemplate>
+									</ContextMenu>
+								</Button.ContextMenu>
+							</Button>
+						</WrapPanel>
 
 					</StackPanel>
 
@@ -1034,6 +1072,7 @@
 
 				</Grid>
 			</Grid>
+
 		</DockPanel>
 	</Grid>
 </UserControl>
